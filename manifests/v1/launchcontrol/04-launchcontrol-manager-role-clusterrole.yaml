@@ -1,0 +1,63 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: launchcontrol-manager-role
+rules:
+- apiGroups:
+  - ""
+  - apps
+  - networking.k8s.io
+  resources:
+  - configmaps
+  - deployments
+  - ingresses
+  - namespaces
+  - services
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - airlock.cloud.rocket.chat
+  resources:
+  - mongodbaccessrequests
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - launchcontrol.cloud.rocket.chat
+  resources:
+  - workspaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - launchcontrol.cloud.rocket.chat
+  resources:
+  - workspaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - launchcontrol.cloud.rocket.chat
+  resources:
+  - workspaces/status
+  verbs:
+  - get
+  - patch
+  - update
