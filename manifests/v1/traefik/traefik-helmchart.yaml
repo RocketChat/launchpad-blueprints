@@ -1,0 +1,25 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: traefik
+  namespace: helm-controller
+spec:
+  repo: https://helm.traefik.io/traefik
+  chart: traefik
+  version: v37.0.0
+  targetNamespace: traefik
+  createNamespace: true
+  valuesContent: |-
+    ingressClass:
+      enabled: true
+      isDefaultClass: true
+    ingressRoute:
+      dashboard:
+        enabled: false
+    globalArguments:
+    - "--api.insecure=true"
+    entryPoints:
+      web:
+        address: ":80"
+      websecure:
+        address: ":443"

@@ -70,6 +70,8 @@ spec:
         command:
         - /manager
         env:
+        - name: CLUSTER_ISSUER
+          value: production-cert-issuer
         - name: READINESS_TIMEOUT
           value: 7m
         - name: OLD_RESOURCE_CLEANUP
