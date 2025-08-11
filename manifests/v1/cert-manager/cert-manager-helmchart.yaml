@@ -1,0 +1,17 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: cert-manager
+  namespace: helm-controller
+spec:
+  repo: https://charts.jetstack.io
+  chart: cert-manager
+  version: v1.18.2
+  targetNamespace: cert-manager
+  createNamespace: true
+  valuesContent: |-
+    crds:
+      enabled: true
+    webhook:
+      hostNetwork: true
+      securePort: 10260

@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: launchcontrol
+    app.kubernetes.io/instance: leader-election-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: rolebinding
+    app.kubernetes.io/part-of: launchcontrol
+  name: launchcontrol-leader-election-rolebinding
+  namespace: launchcontrol-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: launchcontrol-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: launchcontrol-controller-manager
+  namespace: launchcontrol-system

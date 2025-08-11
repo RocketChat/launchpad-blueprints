@@ -1,0 +1,10 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: helm-controller
+spec:
+  valuesContent: |-
+    service:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: nlb
