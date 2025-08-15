@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongosh-ping
+  namespace: workspace-namespace
+spec:
+  containers:
+    - image: alpine/mongosh:2.0.2
+      env:
+      - name: MONGO_CONNECTIONSTRING
+        valueFrom:
+          secretKeyRef:
+            key: connectionString
+            name: mongo-access-secret # secret created by launchpad
+      command:
+        - mongosh
+        - "--quiet"
+        - "--eval"
+        - "'db.runCommand({ping: 1})'"
+        - "$(MONGO_CONNECTIONSTRING)"
+      imagePullPolicy: IfNotPresent
+      name: mongosh-ping
+  restartPolicy: Never
