@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: rocketchat-pod-monitor
+  namespace: workspace-namespace
+spec:
+  podMetricsEndpoints:
+    - port: rc-metrics
+      interval: "30s"
+    - port: ms-metrics
+      interval: "30s"
+  selector:
+    matchLabels:
+      x-launchpad-monitoring: active
