@@ -1,0 +1,20 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: monitoring
+  namespace: helm-controller
+spec:
+  valuesContent: |-
+    operator:
+      prometheus:
+        prometheusSpec:
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                storageClassName: gp2
+
+    grafana:
+      enabled: true
+      deploy:
+        enabled: true
+        storageClassName: gp2
