@@ -1,0 +1,12 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: mongodb-community-operator
+  namespace: helm-controller
+spec:
+  repo: https://mongodb.github.io/helm-charts/
+  chart: community-operator
+  version: v0.13.0
+  targetNamespace: mongodb
+  createNamespace: true
+  #valuesContent: |-
