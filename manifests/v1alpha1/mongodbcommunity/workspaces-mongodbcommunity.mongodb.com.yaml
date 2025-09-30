@@ -7,6 +7,10 @@ spec:
   members: 3
   type: ReplicaSet
   version: "8.0.14"
+  prometheus:
+    username: prometheus-username
+    passwordSecretRef:
+      name: metrics-endpoint-password
   security:
     authentication:
       modes: ["SCRAM"]
@@ -35,7 +39,7 @@ spec:
         spec:
           containers:
             - name: mongod
-              resources:
+              resources: # handled by launchpad
                 limits:
                   cpu: 1500m
                   memory: 6Gi
@@ -52,7 +56,7 @@ spec:
                         values:
                           - mongodb
                   topologyKey: "kubernetes.io/hostname"
-      volumeClaimTemplates:
+      volumeClaimTemplates: # handled by launchpad
         - metadata:
             name: workspaces-db-volume
           spec:

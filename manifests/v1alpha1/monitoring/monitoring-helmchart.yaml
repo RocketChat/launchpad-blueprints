@@ -9,3 +9,11 @@ spec:
   version: 0.0.6
   targetNamespace: monitoring
   createNamespace: true
+  valuesContent: |-
+    grafana:
+      enabled: true
+      dashboards:
+        extra:
+          - name: "mongodb-global"
+            id: "23712"
+            revision: latest

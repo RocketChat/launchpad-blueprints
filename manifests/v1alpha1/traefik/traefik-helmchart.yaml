@@ -23,3 +23,9 @@ spec:
         address: ":80"
       websecure:
         address: ":443"
+    metrics:
+      prometheus:
+        service:
+          enabled: true
+        serviceMonitor:
+          enabled: true
