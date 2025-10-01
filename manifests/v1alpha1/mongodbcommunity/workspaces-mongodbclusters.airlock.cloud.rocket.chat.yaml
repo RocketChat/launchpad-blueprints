@@ -1,0 +1,10 @@
+apiVersion: airlock.cloud.rocket.chat/v1alpha1
+kind: MongoDBCluster
+metadata:
+  name: workspaces
+spec:
+  connectionSecret: airlock-workspaces # managed by launchpad
+  connectionSecretNamespace: mongodb
+  hostTemplate: workspaces-0.workspaces-svc.mongodb.svc.cluster.local:27017,workspaces-1.workspaces-svc.mongodb.svc.cluster.local:27017,workspaces-2.workspaces-svc.mongodb.svc.cluster.local:27017
+  optionsTemplate: "?replicaSet=workspaces&ssl=false"
+  prefixTemplate: mongodb
