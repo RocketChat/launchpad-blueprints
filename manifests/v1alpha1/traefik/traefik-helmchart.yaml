@@ -10,6 +10,8 @@ spec:
   targetNamespace: traefik
   createNamespace: true
   valuesContent: |-
+    deployment:
+      replicas: 2
     ingressClass:
       enabled: true
       isDefaultClass: true
