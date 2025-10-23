@@ -19,19 +19,12 @@ spec:
       dashboard:
         enabled: false
     globalArguments:
-    - "--api.insecure=false"
+    - "--api.insecure=true"
     entryPoints:
       web:
         address: ":80"
       websecure:
         address: ":443"
-    ports:
-      web:
-        redirections:
-          entryPoint:
-            to: websecure
-            scheme: https
-            permanent: true
     metrics:
       prometheus:
         service:
