@@ -1,0 +1,85 @@
+#!/bin/bash
+# images.sh lists all images used by launchpad. An optional 'download' argument saves 
+# the images locally (docker save).
+#
+# It uses our chartcontents.sh to list chart images.
+#
+# yq (https://github.com/mikefarah/yq) is required.
+# docker (https://docs.docker.com/engine/install/) is required.
+
+IFS='
+'
+
+if ! command -v yq &> /dev/null; then
+    echo "'yq' is required but not found" >&2
+    exit 1
+fi
+
+if ! command -v docker &> /dev/null; then
+    echo "'docker' is required but not found" >&2
+    exit 1
+fi
+
+if [ ! -d ./offline/images ]; then
+        mkdir -pv offline/images
+fi
+
+if [ -z "$1" ]; then
+	echo "Usage: $0 rocketchat-tag [download]"
+	exit 1
+fi
+
+rocketchat_tag=$1
+
+if [ "$2" = "download" ]; then
+	download="true"
+fi
+
+bash ./bin/chartcontents.sh
+
+images=$(yq -N '.spec.template.spec.containers[].image' manifests/v1alpha1/launchcontrol/* manifests/v1alpha1/airlock/* manifests/v1alpha1/helm-controller/*)
+images+='
+'
+images+=$(cat offline/charts/*.images)
+images+='
+'
+images+="
+rocketchat/account-service:${rocketchat_tag}
+rocketchat/authorization-service:${rocketchat_tag}
+rocketchat/ddp-streamer-service:${rocketchat_tag}
+rocketchat/omnichannel-transcript-service:${rocketchat_tag}
+rocketchat/presence-service:${rocketchat_tag}
+rocketchat/queue-worker-service:${rocketchat_tag}
+rocketchat/rocket.chat:${rocketchat_tag}
+rocketchat/stream-hub-service:${rocketchat_tag}
+"
+
+# these are hidden in launchcontrol and mongo operators
+images+="
+nats:2.4.0-alpine
+natsio/prometheus-nats-exporter:0.9.3
+natsio/nats-server-config-reloader:0.14.1
+docker.io/mongodb/mongodb-community-server:8.0.14-ubi8
+quay.io/mongodb/mongodb-agent-ubi:108.0.6.8796-1
+"
+
+images=$(sort <<< $images | uniq)
+
+for im in $images; do
+	if [ -z "$download" ]; then
+		echo $im
+		continue
+	fi
+
+	tar="./offline/images/$(basename $im).tar"
+
+	if [ -f "${tar}" ]; then
+		echo "skipping $tar"
+		continue
+	fi
+
+	docker pull $im -q
+	docker save $im -o ${tar} > /dev/null
+	docker image rm $im > /dev/null
+done
+
