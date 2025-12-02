@@ -34,6 +34,7 @@ user_ssh_key=~/.ssh/kvm_lab_rsa
 # nodes configuration
 node_memory=2048
 node_vcpus=2
+node_disk_size="30G"
 node_network="default"
 #
 # configuration: end
@@ -94,7 +95,7 @@ EOF
 
 	disk="${wrk}/${cluster}/${node}-disk.qcow2"
 	cp "$baseimage" "$disk"
-	qemu-img resize "$disk" +30G
+	qemu-img resize "$disk" "+${node_disk_size}"
 
 	sudo virt-install   \
 		--name "$node"   \
