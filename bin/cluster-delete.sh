@@ -49,5 +49,5 @@ for n in $nodes; do
 	sudo virsh destroy $n
 done
 
-rm -rvi "${wrk}/${cluster}" "${wrk}/${cluster}.kubeconfig"
+rm -rv "${wrk}/${cluster}" "${wrk}/${cluster}.kubeconfig"
 

@@ -45,7 +45,7 @@ if [ $# -ne 2 ]; then
 	exit
 fi
 
-for d in "qemu-img virt-install virsh nc autok3s"; do
+for d in "qemu-img virt-install virsh ssh autok3s"; do
 	if ! command -v $d &> /dev/null; then
   	  echo "'${d}' is required but not found" >&2
   	  exit 1
@@ -111,14 +111,12 @@ EOF
 
 	echo "waiting for $node ..."
 
-	while [ -z "$node_ip" ]; do
-		node_ip=$(sudo virsh domifaddr "$node" | grep ipv4 | awk '{print $4}' | cut -f1 -d'/')
-		sleep 1
-	done
+	node_ip="@"
 
-	while ! nc -z $node_ip 22; do
-		sleep 1
-	done
+	while ! ssh -o "StrictHostKeyChecking no" -i $user_ssh_key ${ssh_user}@${node_ip} 'uname -a'; do
+		node_ip=$(sudo virsh domifaddr "$node" | grep ipv4 | awk '{print $4}' | cut -f1 -d'/')
+                sleep 1
+        done
 
 	node_ips+=$node_ip
 	if [ "$n" -ne "$size" ]; then
@@ -126,8 +124,6 @@ EOF
 	fi
 
 	echo $node_ip > "${wrk}/${cluster}/${node}-ip"
-
-	unset node_ip
 done
 
 cat <<< $node_ips
@@ -141,7 +137,14 @@ autok3s -d create     \
 	--ssh-user "$ssh_user"     \
 	--ssh-key-path "$user_ssh_key"     \
 	--master-ips "$master" \
-	--worker-ips "$workers"
+	--worker-ips "$workers" \
+	#--install-env INSTALL_K3S_EXEC="--disable=traefik"
 
 KUBECONFIG="$HOME/.autok3s/.kube/config" kubectl config view --minify --flatten > "${wrk}/${cluster}.kubeconfig"
+
 echo "done. run KUBECONFIG="${wrk}/${cluster}.kubeconfig" kubectl get nodes"
+echo
+echo "if using dnsmasq, add to /etc/dnsmasq.conf:"
+echo "address=/.${cluster}.local/${master}"
+echo "then sudo systemctl restart dnsmasq"
+
