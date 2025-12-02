@@ -45,7 +45,7 @@ if [ $# -ne 2 ]; then
 	exit
 fi
 
-for d in "qemu-img virt-install virsh ssh autok3s"; do
+for d in "qemu-img virt-install virsh ssh ssh-keygen autok3s"; do
 	if ! command -v $d &> /dev/null; then
   	  echo "'${d}' is required but not found" >&2
   	  exit 1
@@ -114,6 +114,7 @@ EOF
 	node_ip="@"
 
 	while ! ssh -o "StrictHostKeyChecking no" -i $user_ssh_key ${ssh_user}@${node_ip} 'uname -a'; do
+		ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip"
 		node_ip=$(sudo virsh domifaddr "$node" | grep ipv4 | awk '{print $4}' | cut -f1 -d'/')
                 sleep 1
         done
