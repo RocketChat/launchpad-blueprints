@@ -54,6 +54,8 @@ rocketchat/rocket.chat:${rocketchat_tag}
 rocketchat/stream-hub-service:${rocketchat_tag}
 "
 
+images+="$(curl -s https://raw.githubusercontent.com/longhorn/longhorn/v1.10.1/deploy/longhorn-images.txt)"
+
 # these are hidden in launchcontrol and mongo operators
 images+="
 nats:2.4.0-alpine

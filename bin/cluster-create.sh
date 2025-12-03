@@ -126,16 +126,25 @@ EOF
 	done
 
 	scp -i "$user_ssh_key" "$k3s" "${ssh_user}@${node_ip}:/home/${ssh_user}/k3s"
-	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo mv /home/${ssh_user}/k3s /usr/local/bin/"
+	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo mv -v /home/${ssh_user}/k3s /usr/local/bin/"
 
 	# https://docs.k3s.io/installation/airgap?airgap-load-images=Manually+Deploy+Images#1-load-images
 	scp -i "$user_ssh_key" "$k3s_images"  "${ssh_user}@${node_ip}:/home/${ssh_user}/"
 	im=$(basename "$k3s_images"); ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
-		"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
+		"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
+
+	# also push local offline images
+	g=./offline/images; if [ -d "$g" ]; then
+		scp -r -i "$user_ssh_key" "${g}" "${ssh_user}@${node_ip}:/home/${ssh_user}/images"
+		ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
+			"sudo mv -v /home/${ssh_user}/images/* /var/lib/rancher/k3s/agent/images/"
+	fi
 
 	# https://docs.k3s.io/installation/packaged-components#using-skip-files
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
 		"sudo mkdir -pv /var/lib/rancher/k3s/server/manifests && sudo touch /var/lib/rancher/k3s/server/manifests/traefik.yaml.skip"
+
+
 
 	node_ips+=$node_ip
 	if [ "$n" -ne "$size" ]; then
