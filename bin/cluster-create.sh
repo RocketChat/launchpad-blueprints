@@ -15,6 +15,11 @@
 # wrk is where we contain the setup
 wrk=~/kvm-lab
 #
+# k3s is the exec K3s binary [also images] (scp, speed up)
+# https://github.com/k3s-io/k3s/releases
+k3s="${wrk}/k3s-releases/k3s"
+k3s_images="${wrk}/k3s-releases/k3s-airgap-images-amd64.tar.gz"
+#
 # baseimage is the KVM, bootable OS cloud image
 # https://cloud-images.ubuntu.com/minimal/releases/jammy/release/
 baseimage="${wrk}/baseimages/ubuntu-22.04-minimal-cloudimg-amd64.img"
@@ -88,6 +93,7 @@ disable_root: false
 #package_update: true
 packages:
   - qemu-guest-agent # Important for libvirt to see IP addresses
+  - open-iscsi # https://longhorn.io/docs/1.10.1/deploy/install/#installing-open-iscsi
 runcmd:
   - systemctl restart ssh
   - echo "Node is ready!"
@@ -111,13 +117,25 @@ EOF
 
 	echo "waiting for $node ..."
 
-	node_ip="@"
-
-	while ! ssh -o "StrictHostKeyChecking no" -i $user_ssh_key ${ssh_user}@${node_ip} 'uname -a'; do
-		ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip"
+	while :; do
 		node_ip=$(sudo virsh domifaddr "$node" | grep ipv4 | awk '{print $4}' | cut -f1 -d'/')
-                sleep 1
-        done
+		ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip"
+
+		ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a'
+		([[ $? -ne 0 ]] && sleep 1) || break
+	done
+
+	scp -i "$user_ssh_key" "$k3s" "${ssh_user}@${node_ip}:/home/${ssh_user}/k3s"
+	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo mv /home/${ssh_user}/k3s /usr/local/bin/"
+
+	# https://docs.k3s.io/installation/airgap?airgap-load-images=Manually+Deploy+Images#1-load-images
+	scp -i "$user_ssh_key" "$k3s_images"  "${ssh_user}@${node_ip}:/home/${ssh_user}/"
+	im=$(basename "$k3s_images"); ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
+		"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
+
+	# https://docs.k3s.io/installation/packaged-components#using-skip-files
+	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
+		"sudo mkdir -pv /var/lib/rancher/k3s/server/manifests && sudo touch /var/lib/rancher/k3s/server/manifests/traefik.yaml.skip"
 
 	node_ips+=$node_ip
 	if [ "$n" -ne "$size" ]; then
@@ -139,7 +157,7 @@ autok3s -d create     \
 	--ssh-key-path "$user_ssh_key"     \
 	--master-ips "$master" \
 	--worker-ips "$workers" \
-	#--install-env INSTALL_K3S_EXEC="--disable=traefik"
+	--install-env INSTALL_K3S_SKIP_DOWNLOAD=true
 
 KUBECONFIG="$HOME/.autok3s/.kube/config" kubectl config view --minify --flatten > "${wrk}/${cluster}.kubeconfig"
 
