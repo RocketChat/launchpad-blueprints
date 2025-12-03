@@ -32,7 +32,7 @@ ssh_user="ubuntu"
 user_ssh_key=~/.ssh/kvm_lab_rsa
 #
 # nodes configuration
-node_memory=2048
+node_memory=4096
 node_vcpus=2
 node_disk_size="30G"
 node_network="default"
@@ -143,9 +143,14 @@ autok3s -d create     \
 
 KUBECONFIG="$HOME/.autok3s/.kube/config" kubectl config view --minify --flatten > "${wrk}/${cluster}.kubeconfig"
 
+echo
 echo "done. run KUBECONFIG="${wrk}/${cluster}.kubeconfig" kubectl get nodes"
 echo
 echo "if using dnsmasq, add to /etc/dnsmasq.conf:"
 echo "address=/.${cluster}.local/${master}"
 echo "then sudo systemctl restart dnsmasq"
+echo
+echo "you can ssh -i $user_ssh_key ${ssh_user}@${master} # or any of ${node_ips}"
+echo
+echo "have fun!"
 
