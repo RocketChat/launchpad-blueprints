@@ -3,8 +3,8 @@
 # chartcontents.sh standardizes chart assets extraction (contents and images used). It fetches
 # our chart contents and also extract images used (read by our images.sh).
 #
-# An optional 'patch' argument patches our HelmChart CRDs '.spec.chartContent' with the
-# base64 encoded content. More at https://github.com/k3s-io/helm-controller/blob/master/doc/helmchart.md#helmchartspec
+# An optional 'patch' argument patches our HelmChart .local CRDs '.spec.chart' with the
+# K3s static file server API URL content reference.
 #
 # yq (https://github.com/mikefarah/yq) is required.
 # helm (https://helm.sh/docs/intro/install/) is required.
@@ -49,9 +49,10 @@ for c in $charts; do
 
 	helm images get ./offline/charts/${chart}-*.tgz > ./offline/charts/${chart}.images
 
-	if [ -n "$patch" ]; then
-		base64 -w0 ./offline/charts/${chart}-*.tgz > ./offline/charts/${chart}.b64
-		yq -i ".spec.chartContent = load_str(\"./offline/charts/${chart}.b64\")" $c
+	l=$(basename ./offline/charts/${chart}-*.tgz); if [ -n "$patch" ]; then
+		yq -i ".spec.chart = \"https://%{KUBERNETES_API}%/static/charts/${l}\"" "${c}.local"
+		yq -i 'del(.spec.repo)' "${c}.local"
+		yq -i 'del(.spec.version)' "${c}.local"
 	fi
 done
 

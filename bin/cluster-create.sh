@@ -94,6 +94,9 @@ disable_root: false
 packages:
   - qemu-guest-agent # Important for libvirt to see IP addresses
   - open-iscsi # https://longhorn.io/docs/1.10.1/deploy/install/#installing-open-iscsi
+  - dmsetup
+  - nfs-common
+  - cryptsetup
 runcmd:
   - systemctl restart ssh
   - echo "Node is ready!"
@@ -139,6 +142,16 @@ EOF
 		ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
 			"sudo mv -v /home/${ssh_user}/images/* /var/lib/rancher/k3s/agent/images/"
 	fi
+
+	# K3s includes a built-in static file server. Any file you place in /var/lib/rancher/k3s/server/static/
+        # on the control plane node becomes instantly accessible inside the cluster via the Kubernetes API URL.
+	# There is a special "magic" variable in K3s Helm Controller: %{KUBERNETES_API}%.
+	# Usage (HelmChart CRD): "spec.chart": "https://%{KUBERNETES_API}%/static/charts/my-app.tgz"
+	c=./offline/charts; if [ $n -eq 1 ] && [ -d "$c" ]; then
+                scp -r -i "$user_ssh_key" "${c}" "${ssh_user}@${node_ip}:/home/${ssh_user}/charts"
+                ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
+                        "sudo mkdir -pv /var/lib/rancher/k3s/server/static/charts && sudo mv -v /home/${ssh_user}/charts/* /var/lib/rancher/k3s/server/static/charts/"
+        fi
 
 	# https://docs.k3s.io/installation/packaged-components#using-skip-files
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
