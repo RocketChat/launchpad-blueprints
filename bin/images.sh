@@ -37,12 +37,15 @@ fi
 
 bash ./bin/chartcontents.sh
 
-images=$(yq -N '.spec.template.spec.containers[].image' manifests/v1alpha1/launchcontrol/* manifests/v1alpha1/airlock/* manifests/v1alpha1/helm-controller/*)
-images+='
-'
-images+=$(cat offline/charts/*.images)
-images+='
-'
+images="$(yq -N '.spec.template.spec.containers[].image' manifests/v1alpha1/launchcontrol/* manifests/v1alpha1/airlock/* manifests/v1alpha1/helm-controller/*)
+"
+
+images+="$(yq -N '.spec.containers[].image' manifests/v1alpha1/mongosh/*)
+"
+
+images+="$(cat offline/charts/*.images)
+"
+
 images+="
 rocketchat/account-service:${rocketchat_tag}
 rocketchat/authorization-service:${rocketchat_tag}
