@@ -15,10 +15,17 @@
 # wrk is where we contain the setup
 wrk=~/kvm-lab
 #
-# k3s is the exec K3s binary [also images] (scp, speed up)
-# https://github.com/k3s-io/k3s/releases
-k3s="${wrk}/k3s-releases/k3s"
-k3s_images="${wrk}/k3s-releases/k3s-airgap-images-amd64.tar.gz"
+# if not empty, we switch cluster to air_gapped_network after setting up node host
+# but before installing K3s. Cluster should behave as offline after install.
+# air_gapped_network must be created with airgapped_net.sh .
+air_gapped_network="airgapped-net"
+air_gapped_subnet_ip="192.168.100.1"
+#
+# k3s arch and version will be used for creating autok3s' airgap package
+# https://github.com/cnrancher/autok3s/blob/master/docs/i18n/en_us/airgap/README.md
+k3s_arch="amd64"
+k3s_version="v1.34.2+k3s1"
+airgap_package_name="my-off"
 #
 # baseimage is the KVM, bootable OS cloud image
 # https://cloud-images.ubuntu.com/minimal/releases/jammy/release/
@@ -39,8 +46,9 @@ user_ssh_key=~/.ssh/kvm_lab_rsa
 # nodes configuration
 node_memory=4096
 node_vcpus=2
-node_disk_size="30G"
+node_disk_size="50G"
 node_network="default"
+node_network_subnet_ip="192.168.122.1"
 #
 # configuration: end
 
@@ -65,7 +73,7 @@ if [ "$size" -lt 2 ]; then
 fi
 
 if [ -d "${wrk}/$cluster" ]; then
-	echo "$cluster exists - won't operate. can 'cluster-delete.sh ${cluster}'"
+	echo "$cluster exists - won't operate. can 'k3s_cluster_delete.sh ${cluster}'"
 	exit 1
 fi
 
@@ -90,15 +98,15 @@ users:
       - $(cat ${user_ssh_key}.pub)
 ssh_pwauth: false
 disable_root: false
-#package_update: true
+package_update: true
 packages:
-  - qemu-guest-agent # Important for libvirt to see IP addresses
   - open-iscsi # https://longhorn.io/docs/1.10.1/deploy/install/#installing-open-iscsi
   - dmsetup
   - nfs-common
   - cryptsetup
+  - qemu-guest-agent # ...
 runcmd:
-  - systemctl restart ssh
+  - systemctl enable --now qemu-guest-agent
   - echo "Node is ready!"
 EOF
 
@@ -106,7 +114,7 @@ EOF
 	cp "$baseimage" "$disk"
 	qemu-img resize "$disk" "+${node_disk_size}"
 
-	sudo virt-install   \
+	virt-install   \
 		--name "$node"   \
 		--memory "$node_memory"   \
 		--vcpus "$node_vcpus"   \
@@ -116,31 +124,49 @@ EOF
 		--graphics none   \
 		--import   \
 		--noautoconsole   \
-		--cloud-init user-data="${init}"
+		--cloud-init user-data="${init}" \
+		--channel unix,target_type=virtio,name=org.qemu.guest_agent.0
 
 	echo "waiting for $node ..."
 
-	while :; do
-		node_ip=$(sudo virsh domifaddr "$node" | grep ipv4 | awk '{print $4}' | cut -f1 -d'/')
-		ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip"
+	while ! virsh qemu-agent-command "$node" '{"execute":"guest-ping"}' &> /dev/null; do
+		sleep 1
+	done
 
-		ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a'
+	if [ -n "$air_gapped_network" ]; then
+		node_network="$air_gapped_network"
+		node_network_subnet_ip="$air_gapped_subnet_ip"
+	fi
+
+	prefix="$(echo $node_network_subnet_ip | cut -f1-3 -d'.')"
+
+	./bin/switch_network_static.sh "$node" "$node_network" "${prefix}.$((n + 1))/24" "$node_network_subnet_ip"
+	
+	virsh shutdown "$node" && sleep 10 && virsh start  "$node"
+
+	while :; do
+		node_ip=$(virsh domifaddr "$node" --source agent | grep enp1s0 | awk '{print $4}' | cut -f1 -d'/')
+		ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip" 2> /dev/null
+
+		ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a' 2> /dev/null
 		([[ $? -ne 0 ]] && sleep 1) || break
 	done
 
-	scp -i "$user_ssh_key" "$k3s" "${ssh_user}@${node_ip}:/home/${ssh_user}/k3s"
-	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo mv -v /home/${ssh_user}/k3s /usr/local/bin/"
+	# copy k3s binary. commented as included in autok3s airgap package
+	#scp -i "$user_ssh_key" "$k3s" "${ssh_user}@${node_ip}:/home/${ssh_user}/k3s"
+	#ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo mv -v /home/${ssh_user}/k3s /usr/local/bin/"
 
+	# copy k3s base images. commented as included in autok3s airgap package
 	# https://docs.k3s.io/installation/airgap?airgap-load-images=Manually+Deploy+Images#1-load-images
-	scp -i "$user_ssh_key" "$k3s_images"  "${ssh_user}@${node_ip}:/home/${ssh_user}/"
-	im=$(basename "$k3s_images"); ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
-		"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
+	#scp -i "$user_ssh_key" "$k3s_images"  "${ssh_user}@${node_ip}:/home/${ssh_user}/"
+	#im=$(basename "$k3s_images"); ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
+	#	"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
 
-	# also push local offline images
+	# push local offline images
 	g=./offline/images; if [ -d "$g" ]; then
 		scp -r -i "$user_ssh_key" "${g}" "${ssh_user}@${node_ip}:/home/${ssh_user}/images"
 		ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
-			"sudo mv -v /home/${ssh_user}/images/* /var/lib/rancher/k3s/agent/images/"
+			"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/images/* /var/lib/rancher/k3s/agent/images/"
 	fi
 
 	# K3s includes a built-in static file server. Any file you place in /var/lib/rancher/k3s/server/static/
@@ -155,9 +181,9 @@ EOF
 
 	# https://docs.k3s.io/installation/packaged-components#using-skip-files
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
-		"sudo mkdir -pv /var/lib/rancher/k3s/server/manifests && sudo touch /var/lib/rancher/k3s/server/manifests/traefik.yaml.skip"
-
-
+		"sudo mkdir -pv /var/lib/rancher/k3s/server/manifests && \
+		sudo touch /var/lib/rancher/k3s/server/manifests/traefik.yaml.skip && \
+		sudo touch /var/lib/rancher/k3s/server/manifests/local-storage.yaml.skip"
 
 	node_ips+=$node_ip
 	if [ "$n" -ne "$size" ]; then
@@ -172,6 +198,12 @@ cat <<< $node_ips
 master=$(echo $node_ips | cut -f1 -d',')
 workers=$(echo $node_ips | cut -f2- -d',')
 
+#autok3s airgap update-install-script
+
+if ! autok3s airgap ls | grep "$airgap_package_name"; then
+	autok3s airgap create "$airgap_package_name"  --arch "$k3s_arch" --k3s-version "$k3s_version"
+fi
+
 autok3s -d create     \
 	--provider native     \
 	--name "$cluster"     \
@@ -179,7 +211,9 @@ autok3s -d create     \
 	--ssh-key-path "$user_ssh_key"     \
 	--master-ips "$master" \
 	--worker-ips "$workers" \
-	--install-env INSTALL_K3S_SKIP_DOWNLOAD=true
+	--package-name "$airgap_package_name" 
+	#--install-env INSTALL_K3S_EXEC="--flannel-external-ip"
+	#--install-env INSTALL_K3S_SKIP_DOWNLOAD=true \ # commented as included in autok3s airgap package https://github.com/cnrancher/autok3s/blob/a4091655f4eae2561ca92118691cfd825853b048/pkg/cluster/commands.go#L41
 
 KUBECONFIG="$HOME/.autok3s/.kube/config" kubectl config view --minify --flatten > "${wrk}/${cluster}.kubeconfig"
 

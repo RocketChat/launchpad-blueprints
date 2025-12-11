@@ -66,6 +66,7 @@ natsio/prometheus-nats-exporter:0.9.3
 natsio/nats-server-config-reloader:0.14.1
 docker.io/mongodb/mongodb-community-server:8.0.14-ubi8
 quay.io/mongodb/mongodb-agent-ubi:108.0.6.8796-1
+docker.io/grafana/grafana:11.3.0
 "
 
 images=$(sort <<< $images | uniq)

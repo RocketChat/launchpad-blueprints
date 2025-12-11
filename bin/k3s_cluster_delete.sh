@@ -34,19 +34,19 @@ if [ ! -d "${wrk}/$cluster" ]; then
         exit 1
 fi
 
-nodes=$(sudo virsh list | grep "${cluster}-node-" | awk '{print $2}')
+nodes=$(virsh list --all | grep "${cluster}-node-" | awk '{print $2}')
 
 if [ -z "$nodes" ]; then
 	echo "could not find a node. nodes:"
-	sudo virsh list
+	virsh list
 	exit 1
 fi
 
 autok3s -d delete --provider native --name "$cluster"
 
 for n in $nodes; do
-	sudo virsh undefine $n
-	sudo virsh destroy $n
+	virsh undefine $n
+	virsh destroy $n
 done
 
 rm -rv "${wrk}/${cluster}" "${wrk}/${cluster}.kubeconfig"
