@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# image_load.sh imports images directly into K3s containerd image store 
+# k3s_image_load.sh imports images directly into K3s containerd image store 
 # by placing image tarballs in the /var/lib/rancher/k3s/agent/images directory.
 # More at https://docs.k3s.io/add-ons/import-images?import-images=Offline+image+importing
 # It expects a cluster created with k3s_cluster_create.sh .

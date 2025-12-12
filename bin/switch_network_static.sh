@@ -18,21 +18,18 @@ if [ "$#" -lt 3 ]; then
     exit 1
 fi
 
+for d in "virsh cloud-localds"; do
+        if ! command -v $d &> /dev/null; then
+          echo "'${d}' is required but not found" >&2
+          exit 1
+        fi
+done
+
 VM_NAME=$1
 NEW_NET=$2
 NEW_IP=$3
 GATEWAY=$4
 
-
-ISO_DIR="${wrk}/${VM_NAME}"
-mkdir -p "$ISO_DIR"
-ISO_PATH="$ISO_DIR/${VM_NAME}-network-config.iso"
-
-if ! command -v cloud-localds &> /dev/null; then
-    echo "Error: 'cloud-localds' is not installed."
-    echo "Please run: sudo apt install cloud-image-utils"
-    exit 1
-fi
 
 MAC_ADDR=$(virsh domiflist $VM_NAME | grep -m 1 -E "network|bridge" | awk '{print $5}')
 
@@ -83,6 +80,10 @@ EOF
 
 # dummy meta-data (required by cloud-localds)
 echo "instance-id: $(uuidgen || echo i-custom)" > meta-data
+
+ISO_DIR="${wrk}/$(echo ${VM_NAME} | sed -E 's,-node-.,,g')" # wrk/cluster or wrk/vm
+mkdir -pv "$ISO_DIR"
+ISO_PATH="$ISO_DIR/${VM_NAME}-network-config.iso"
 
 echo "Building config drive at $ISO_PATH..."
 

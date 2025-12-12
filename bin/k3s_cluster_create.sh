@@ -17,12 +17,13 @@ wrk=~/kvm-lab
 #
 # if not empty, we switch cluster to air_gapped_network after setting up node host
 # but before installing K3s. Cluster should behave as offline after install.
-# air_gapped_network must be created with airgapped_net.sh .
-air_gapped_network="airgapped-net"
+# air_gapped_network will be created with create_airgapped_net.sh (check config).
+air_gapped_network="" # "airgapped-net"
 air_gapped_subnet_ip="192.168.100.1"
 #
 # k3s arch and version will be used for creating autok3s' airgap package
 # https://github.com/cnrancher/autok3s/blob/master/docs/i18n/en_us/airgap/README.md
+# we'll use this feature on creation regardless to speed up deployment
 k3s_arch="amd64"
 k3s_version="v1.34.2+k3s1"
 airgap_package_name="my-off"
@@ -89,6 +90,7 @@ for n in $(seq 1 "$size"); do
 hostname: ${node}
 fqdn: ${node}.local
 manage_etc_hosts: true
+
 users:
   - name: ${ssh_user}
     sudo: ALL=(ALL) NOPASSWD:ALL
@@ -98,14 +100,22 @@ users:
       - $(cat ${user_ssh_key}.pub)
 ssh_pwauth: false
 disable_root: false
+
 package_update: true
 packages:
-  - open-iscsi # https://longhorn.io/docs/1.10.1/deploy/install/#installing-open-iscsi
+  - open-iscsi
   - dmsetup
   - nfs-common
   - cryptsetup
-  - qemu-guest-agent # ...
+  - qemu-guest-agent
+
 runcmd:
+  # if package install somehow still failed, retry it here
+  - |
+    until apt-get update; do sleep 2; done
+    if ! systemctl is-active --quiet qemu-guest-agent; then
+        DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-guest-agent open-iscsi dmsetup nfs-common cryptsetup
+    fi
   - systemctl enable --now qemu-guest-agent
   - echo "Node is ready!"
 EOF
@@ -134,6 +144,8 @@ EOF
 	done
 
 	if [ -n "$air_gapped_network" ]; then
+		./bin/create_airgapped_net.sh
+
 		node_network="$air_gapped_network"
 		node_network_subnet_ip="$air_gapped_subnet_ip"
 	fi
@@ -163,7 +175,7 @@ EOF
 	#	"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
 
 	# push local offline images
-	g=./offline/images; if [ -d "$g" ]; then
+	g=./offline/images; if [ -d "$g" ] && [ -n "$air_gapped_network" ]; then
 		scp -r -i "$user_ssh_key" "${g}" "${ssh_user}@${node_ip}:/home/${ssh_user}/images"
 		ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
 			"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/images/* /var/lib/rancher/k3s/agent/images/"
@@ -173,7 +185,7 @@ EOF
         # on the control plane node becomes instantly accessible inside the cluster via the Kubernetes API URL.
 	# There is a special "magic" variable in K3s Helm Controller: %{KUBERNETES_API}%.
 	# Usage (HelmChart CRD): "spec.chart": "https://%{KUBERNETES_API}%/static/charts/my-app.tgz"
-	c=./offline/charts; if [ $n -eq 1 ] && [ -d "$c" ]; then
+	c=./offline/charts; if [ $n -eq 1 ] && [ -d "$c" ] && [ -n "$air_gapped_network" ]; then
                 scp -r -i "$user_ssh_key" "${c}" "${ssh_user}@${node_ip}:/home/${ssh_user}/charts"
                 ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
                         "sudo mkdir -pv /var/lib/rancher/k3s/server/static/charts && sudo mv -v /home/${ssh_user}/charts/* /var/lib/rancher/k3s/server/static/charts/"
@@ -198,9 +210,8 @@ cat <<< $node_ips
 master=$(echo $node_ips | cut -f1 -d',')
 workers=$(echo $node_ips | cut -f2- -d',')
 
-#autok3s airgap update-install-script
-
 if ! autok3s airgap ls | grep "$airgap_package_name"; then
+	autok3s airgap update-install-script
 	autok3s airgap create "$airgap_package_name"  --arch "$k3s_arch" --k3s-version "$k3s_version"
 fi
 
