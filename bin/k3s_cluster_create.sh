@@ -7,7 +7,6 @@
 #
 # KVM, libvirt and cloud-init utilities are required:
 #   sudo apt update && sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst cloud-image-utils
-# autok3s (https://github.com/cnrancher/autok3s/releases) is required.
 
 
 # configuration: start
@@ -59,7 +58,7 @@ if [ $# -ne 2 ]; then
 	exit
 fi
 
-for d in "qemu-img virt-install virsh ssh ssh-keygen autok3s"; do
+for d in "qemu-img virt-install virsh ssh ssh-keygen"; do
 	if ! command -v $d &> /dev/null; then
   	  echo "'${d}' is required but not found" >&2
   	  exit 1
