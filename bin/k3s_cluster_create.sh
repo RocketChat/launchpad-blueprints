@@ -17,7 +17,7 @@ wrk=~/kvm-lab
 # if not empty, we switch cluster to air_gapped_network after setting up node host
 # but before installing K3s. Cluster should behave as offline after install.
 # air_gapped_network will be created with create_airgapped_net.sh (check config).
-air_gapped_network="" # "airgapped-net"
+air_gapped_network="airgapped-net"
 air_gapped_subnet_ip="192.168.100.1"
 #
 # k3s assets (scp, speed up)
@@ -147,22 +147,21 @@ EOF
         done
 
 	# install online deps (qemu guest and longhorn)
+	# prefer here instead of cloud init above, as shown inconsistent (race)
 	# https://longhorn.io/docs/1.10.1/deploy/install/#installing-open-iscsi
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf; \
-		until sudo resolvectl status && sudo apt-get update; do sleep 2; done; \
+		until curl google.com; do sleep 2; done; \
+		sudo apt-get update && \
 		DEBIAN_FRONTEND=noninteractive sudo apt-get install -y qemu-guest-agent open-iscsi dmsetup nfs-common cryptsetup && \
 		sudo systemctl enable --now qemu-guest-agent"
 
 	if [ -n "$air_gapped_network" ]; then
 		./bin/create_airgapped_net.sh
 
-		node_network="$air_gapped_network"
-		node_network_subnet_ip="$air_gapped_subnet_ip"
-
-		prefix="$(echo $node_network_subnet_ip | cut -f1-3 -d'.')"
+		prefix="$(echo $air_gapped_subnet_ip | cut -f1-3 -d'.')"
 		node_ip="${prefix}.$((n + 1))"
 
-		./bin/switch_network_static.sh "$node" "$node_network" "${node_ip}/24" "$node_network_subnet_ip"
+		./bin/switch_network_static.sh "$node" "$air_gapped_network" "${node_ip}/24" "$air_gapped_subnet_ip"
 
 		virsh shutdown "$node" && sleep 10 && virsh start  "$node"
 		

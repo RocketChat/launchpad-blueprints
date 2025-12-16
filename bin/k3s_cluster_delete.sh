@@ -4,7 +4,6 @@
 #
 # KVM, libvirt and cloud-init utilities are required:
 #   sudo apt update && sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst cloud-image-utils
-# autok3s (https://github.com/cnrancher/autok3s/releases) is required.
 
 # configuration: start
 #
