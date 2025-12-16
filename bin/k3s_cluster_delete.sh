@@ -19,7 +19,7 @@ if [ $# -ne 1 ]; then
         exit
 fi
 
-for d in "virsh autok3s"; do
+for d in "virsh"; do
         if ! command -v $d &> /dev/null; then
           echo "'${d}' is required but not found" >&2
           exit 1
@@ -29,8 +29,7 @@ done
 cluster="$1"
 
 if [ ! -d "${wrk}/$cluster" ]; then
-        echo "$cluster doesn't exist - won't operate. clusters:"
-	autok3s list
+        echo "$cluster doesn't exist - won't operate"
         exit 1
 fi
 
@@ -41,8 +40,6 @@ if [ -z "$nodes" ]; then
 	virsh list
 	exit 1
 fi
-
-autok3s -d delete --provider native --name "$cluster"
 
 for n in $nodes; do
 	virsh undefine $n

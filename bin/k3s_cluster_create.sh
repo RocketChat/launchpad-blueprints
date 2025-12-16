@@ -21,12 +21,12 @@ wrk=~/kvm-lab
 air_gapped_network="" # "airgapped-net"
 air_gapped_subnet_ip="192.168.100.1"
 #
-# k3s arch and version will be used for creating autok3s' airgap package
-# https://github.com/cnrancher/autok3s/blob/master/docs/i18n/en_us/airgap/README.md
-# we'll use this feature on creation regardless to speed up deployment
-k3s_arch="amd64"
-k3s_version="v1.34.2+k3s1"
-airgap_package_name="my-off"
+# k3s assets (scp, speed up)
+#   - install script: https://get.k3s.io/
+#   - binary, images: https://github.com/k3s-io/k3s/releases
+k3s_install="${wrk}/k3s-releases/install.sh"
+k3s="${wrk}/k3s-releases/k3s"
+k3s_images="${wrk}/k3s-releases/k3s-airgap-images-amd64.tar.gz"
 #
 # baseimage is the KVM, bootable OS cloud image
 # https://cloud-images.ubuntu.com/minimal/releases/jammy/release/
@@ -83,9 +83,10 @@ mkdir -pv "${wrk}/$cluster"
 for n in $(seq 1 "$size"); do
 	node="${cluster}-node-${n}"
 
-	init="${wrk}/${cluster}/${node}-cloud-init"
+	init_user="${wrk}/${cluster}/${node}-cloud-init-user"
+	init_net="${wrk}/${cluster}/${node}-cloud-init-net"
 
-	cat > $init <<EOF
+	cat > $init_user <<EOF
 #cloud-config
 hostname: ${node}
 fqdn: ${node}.local
@@ -101,23 +102,24 @@ users:
 ssh_pwauth: false
 disable_root: false
 
-package_update: true
-packages:
-  - open-iscsi
-  - dmsetup
-  - nfs-common
-  - cryptsetup
-  - qemu-guest-agent
+package_update: false
+packages: []
+EOF
 
-runcmd:
-  # if package install somehow still failed, retry it here
-  - |
-    until apt-get update; do sleep 2; done
-    if ! systemctl is-active --quiet qemu-guest-agent; then
-        DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-guest-agent open-iscsi dmsetup nfs-common cryptsetup
-    fi
-  - systemctl enable --now qemu-guest-agent
-  - echo "Node is ready!"
+prefix="$(echo $node_network_subnet_ip | cut -f1-3 -d'.')"
+node_ip="${prefix}.$((n + 1))"
+
+        cat > $init_net <<EOF
+version: 2
+ethernets:
+  id0:
+    match:
+      name: "en*"
+    addresses:
+      - ${node_ip}/24
+    gateway4: ${node_network_subnet_ip}
+    nameservers:
+      addresses: [8.8.8.8, 1.1.1.1]
 EOF
 
 	disk="${wrk}/${cluster}/${node}-disk.qcow2"
@@ -128,51 +130,64 @@ EOF
 		--name "$node"   \
 		--memory "$node_memory"   \
 		--vcpus "$node_vcpus"   \
-		--disk path="${disk}",device=disk,bus=virtio \
+		--disk path="${disk}",device=disk,bus=virtio,cache=none \
 	      	--os-variant "$os_variant"    \
 		--network "network=${node_network},model=virtio"   \
 		--graphics none   \
 		--import   \
 		--noautoconsole   \
-		--cloud-init user-data="${init}" \
+		--cloud-init user-data=${init_user},network-config=${init_net} \
 		--channel unix,target_type=virtio,name=org.qemu.guest_agent.0
 
 	echo "waiting for $node ..."
 
-	while ! virsh qemu-agent-command "$node" '{"execute":"guest-ping"}' &> /dev/null; do
-		sleep 1
-	done
+	while :; do
+                ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip" 2> /dev/null
+                ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a && cloud-init status --wait' 2> /dev/null
+                ([[ $? -ne 0 ]] && sleep 1) || break
+        done
+
+	# install online deps (qemu guest and longhorn)
+	# https://longhorn.io/docs/1.10.1/deploy/install/#installing-open-iscsi
+	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf; \
+		until sudo resolvectl status && sudo apt-get update; do sleep 2; done; \
+		DEBIAN_FRONTEND=noninteractive sudo apt-get install -y qemu-guest-agent open-iscsi dmsetup nfs-common cryptsetup && \
+		sudo systemctl enable --now qemu-guest-agent"
 
 	if [ -n "$air_gapped_network" ]; then
 		./bin/create_airgapped_net.sh
 
 		node_network="$air_gapped_network"
 		node_network_subnet_ip="$air_gapped_subnet_ip"
+
+		prefix="$(echo $node_network_subnet_ip | cut -f1-3 -d'.')"
+		node_ip="${prefix}.$((n + 1))"
+
+		./bin/switch_network_static.sh "$node" "$node_network" "${node_ip}/24" "$node_network_subnet_ip"
+
+		virsh shutdown "$node" && sleep 10 && virsh start  "$node"
+		
+		while ! virsh qemu-agent-command "$node" '{"execute":"guest-ping"}' &> /dev/null; do
+			sleep 1
+		done
+
+		ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip" 2> /dev/null
+		ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a && cloud-init status --wait' 2> /dev/null
+		[[ $? -eq 0 ]] || exit 1
 	fi
 
-	prefix="$(echo $node_network_subnet_ip | cut -f1-3 -d'.')"
+	# copy k3s install script
+	scp -i "$user_ssh_key" "$k3s_install" "${ssh_user}@${node_ip}:/home/${ssh_user}/install.sh"
 
-	./bin/switch_network_static.sh "$node" "$node_network" "${prefix}.$((n + 1))/24" "$node_network_subnet_ip"
-	
-	virsh shutdown "$node" && sleep 10 && virsh start  "$node"
+	# copy k3s binary
+	scp -i "$user_ssh_key" "$k3s" "${ssh_user}@${node_ip}:/home/${ssh_user}/k3s"
+	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo mv -v /home/${ssh_user}/k3s /usr/local/bin/"
 
-	while :; do
-		node_ip=$(virsh domifaddr "$node" --source agent | grep enp1s0 | awk '{print $4}' | cut -f1 -d'/')
-		ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip" 2> /dev/null
-
-		ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a' 2> /dev/null
-		([[ $? -ne 0 ]] && sleep 1) || break
-	done
-
-	# copy k3s binary. commented as included in autok3s airgap package
-	#scp -i "$user_ssh_key" "$k3s" "${ssh_user}@${node_ip}:/home/${ssh_user}/k3s"
-	#ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo mv -v /home/${ssh_user}/k3s /usr/local/bin/"
-
-	# copy k3s base images. commented as included in autok3s airgap package
+	# copy k3s base images
 	# https://docs.k3s.io/installation/airgap?airgap-load-images=Manually+Deploy+Images#1-load-images
-	#scp -i "$user_ssh_key" "$k3s_images"  "${ssh_user}@${node_ip}:/home/${ssh_user}/"
-	#im=$(basename "$k3s_images"); ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
-	#	"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
+	scp -i "$user_ssh_key" "$k3s_images"  "${ssh_user}@${node_ip}:/home/${ssh_user}/"
+	im=$(basename "$k3s_images"); ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
+		"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
 
 	# push local offline images
 	g=./offline/images; if [ -d "$g" ] && [ -n "$air_gapped_network" ]; then
@@ -191,6 +206,7 @@ EOF
                         "sudo mkdir -pv /var/lib/rancher/k3s/server/static/charts && sudo mv -v /home/${ssh_user}/charts/* /var/lib/rancher/k3s/server/static/charts/"
         fi
 
+	# skip traefik and local-storage
 	# https://docs.k3s.io/installation/packaged-components#using-skip-files
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
 		"sudo mkdir -pv /var/lib/rancher/k3s/server/manifests && \
@@ -199,7 +215,7 @@ EOF
 
 	node_ips+=$node_ip
 	if [ "$n" -ne "$size" ]; then
-		node_ips+=","
+		node_ips+=" "
 	fi
 
 	echo $node_ip > "${wrk}/${cluster}/${node}-ip"
@@ -207,26 +223,23 @@ done
 
 cat <<< $node_ips
 
-master=$(echo $node_ips | cut -f1 -d',')
-workers=$(echo $node_ips | cut -f2- -d',')
+master=$(echo $node_ips | cut -f1 -d' ')
+workers=$(echo $node_ips | cut -f2- -d' ')
 
-if ! autok3s airgap ls | grep "$airgap_package_name"; then
-	autok3s airgap update-install-script
-	autok3s airgap create "$airgap_package_name"  --arch "$k3s_arch" --k3s-version "$k3s_version"
-fi
+tok="$(echo 'k3s-super-secret' | sha1sum | cut -f1 -d' ')"
 
-autok3s -d create     \
-	--provider native     \
-	--name "$cluster"     \
-	--ssh-user "$ssh_user"     \
-	--ssh-key-path "$user_ssh_key"     \
-	--master-ips "$master" \
-	--worker-ips "$workers" \
-	--package-name "$airgap_package_name" 
-	#--install-env INSTALL_K3S_EXEC="--flannel-external-ip"
-	#--install-env INSTALL_K3S_SKIP_DOWNLOAD=true \ # commented as included in autok3s airgap package https://github.com/cnrancher/autok3s/blob/a4091655f4eae2561ca92118691cfd825853b048/pkg/cluster/commands.go#L41
+# k3s master setup
+ssh -i "$user_ssh_key" "${ssh_user}@${master}" "INSTALL_K3S_EXEC='server --advertise-address=${master} --cluster-cidr=10.42.0.0/16 --node-external-ip=${master} --tls-san=${master} ' INSTALL_K3S_SKIP_DOWNLOAD='true' K3S_TOKEN='${tok}' ./install.sh"
 
-KUBECONFIG="$HOME/.autok3s/.kube/config" kubectl config view --minify --flatten > "${wrk}/${cluster}.kubeconfig"
+# k3s workers setup
+for worker in $workers; do
+	ssh -i "$user_ssh_key" "${ssh_user}@${worker}" "INSTALL_K3S_EXEC='--node-external-ip=${worker} ' INSTALL_K3S_SKIP_DOWNLOAD='true' K3S_TOKEN='${tok}' K3S_URL='https://${master}:6443' ./install.sh"
+done
+
+# grab kube config
+ssh -i "$user_ssh_key" "${ssh_user}@${master}" "sudo cp /etc/rancher/k3s/k3s.yaml ${cluster}.kubeconfig && sudo chown ${ssh_user}:${ssh_user} ${cluster}.kubeconfig && chmod 600 ${cluster}.kubeconfig"
+scp -i "$user_ssh_key" "${ssh_user}@${master}:/home/${ssh_user}/${cluster}.kubeconfig" "${wrk}/${cluster}.kubeconfig"
+sed -i "s,server: https://127.0.0.1:6443,server: https://${master}:6443,g" "${wrk}/${cluster}.kubeconfig"
 
 echo
 echo "done. run KUBECONFIG="${wrk}/${cluster}.kubeconfig" kubectl get nodes"
