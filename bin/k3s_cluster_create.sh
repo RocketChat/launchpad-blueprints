@@ -17,19 +17,22 @@ wrk=~/kvm-lab
 # if not empty, we switch cluster to air_gapped_network after setting up node host
 # but before installing K3s. Cluster should behave as offline after install.
 # air_gapped_network will be created with create_airgapped_net.sh (check config).
-air_gapped_network="airgapped-net"
+air_gapped_network="" # "airgapped-net"
 air_gapped_subnet_ip="192.168.100.1"
 #
-# k3s assets (scp, speed up)
-#   - install script: https://get.k3s.io/
-#   - binary, images: https://github.com/k3s-io/k3s/releases
+# k3s assets (scp, speed up); if not present, we fetch it once
 k3s_install="${wrk}/k3s-releases/install.sh"
+k3s_install_url="https://get.k3s.io"
+
 k3s="${wrk}/k3s-releases/k3s"
+k3s_url="https://github.com/k3s-io/k3s/releases/download/v1.34.2%2Bk3s1/k3s"
+
 k3s_images="${wrk}/k3s-releases/k3s-airgap-images-amd64.tar.gz"
+k3s_images_url="https://github.com/k3s-io/k3s/releases/download/v1.34.2%2Bk3s1/k3s-airgap-images-amd64.tar.gz"
 #
-# baseimage is the KVM, bootable OS cloud image
-# https://cloud-images.ubuntu.com/minimal/releases/jammy/release/
+# baseimage is the KVM, bootable OS cloud image; if not present, we fetch it once
 baseimage="${wrk}/baseimages/ubuntu-22.04-minimal-cloudimg-amd64.img"
+baseimage_url="https://cloud-images.ubuntu.com/minimal/releases/jammy/release/ubuntu-22.04-minimal-cloudimg-amd64.img"
 #
 # os_variant hints specific operating system configuration
 # must be one of:
@@ -121,8 +124,17 @@ ethernets:
       addresses: [8.8.8.8, 1.1.1.1]
 EOF
 
+	# base image; fetch, clone, resize
+	bd=$(dirname "$baseimage"); if [ ! -d "$bd" ]; then
+                mkdir -pv "$bd"
+        fi
+
+        if [ ! -f "$baseimage" ]; then
+                curl --retry 3 --progress-bar -Lo "$baseimage" "$baseimage_url"
+        fi
+
 	disk="${wrk}/${cluster}/${node}-disk.qcow2"
-	cp "$baseimage" "$disk"
+	cp -v "$baseimage" "$disk"
 	qemu-img resize "$disk" "+${node_disk_size}"
 
 	virt-install   \
@@ -150,7 +162,7 @@ EOF
 	# prefer here instead of cloud init above, as shown inconsistent (race)
 	# https://longhorn.io/docs/1.10.1/deploy/install/#installing-open-iscsi
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf; \
-		until curl google.com; do sleep 2; done; \
+		until curl google.com &> /dev/null; do sleep 2; done; \
 		sudo apt-get update && \
 		DEBIAN_FRONTEND=noninteractive sudo apt-get install -y qemu-guest-agent open-iscsi dmsetup nfs-common cryptsetup && \
 		sudo systemctl enable --now qemu-guest-agent"
@@ -174,15 +186,30 @@ EOF
 		[[ $? -eq 0 ]] || exit 1
 	fi
 
+	kd=$(dirname "$k3s_install"); if [ ! -d "$kd" ]; then
+		mkdir -pv "$kd"
+	fi
+
 	# copy k3s install script
+	if [ ! -x "$k3s_install" ]; then
+		curl --retry 3 --progress-bar -Lo "$k3s_install" "$k3s_install_url"
+		chmod +x "$k3s_install"
+	fi
 	scp -i "$user_ssh_key" "$k3s_install" "${ssh_user}@${node_ip}:/home/${ssh_user}/install.sh"
 
 	# copy k3s binary
+	if [ ! -x "$k3s" ]; then
+                curl --retry 3 --progress-bar -Lo "$k3s" "$k3s_url"
+                chmod +x "$k3s"
+        fi
 	scp -i "$user_ssh_key" "$k3s" "${ssh_user}@${node_ip}:/home/${ssh_user}/k3s"
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo mv -v /home/${ssh_user}/k3s /usr/local/bin/"
 
 	# copy k3s base images
 	# https://docs.k3s.io/installation/airgap?airgap-load-images=Manually+Deploy+Images#1-load-images
+	if [ ! -f "$k3s_images" ]; then
+                curl --retry 3 --progress-bar -Lo "$k3s_images" "$k3s_images_url"
+        fi
 	scp -i "$user_ssh_key" "$k3s_images"  "${ssh_user}@${node_ip}:/home/${ssh_user}/"
 	im=$(basename "$k3s_images"); ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
 		"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && sudo mv -v /home/${ssh_user}/${im} /var/lib/rancher/k3s/agent/images/"
@@ -226,11 +253,14 @@ workers=$(echo $node_ips | cut -f2- -d' ')
 
 tok="$(echo 'k3s-super-secret' | sha1sum | cut -f1 -d' ')"
 
+echo "-> running install on master ${master}"
+
 # k3s master setup
 ssh -i "$user_ssh_key" "${ssh_user}@${master}" "INSTALL_K3S_EXEC='server --advertise-address=${master} --cluster-cidr=10.42.0.0/16 --node-external-ip=${master} --tls-san=${master} ' INSTALL_K3S_SKIP_DOWNLOAD='true' K3S_TOKEN='${tok}' ./install.sh"
 
 # k3s workers setup
 for worker in $workers; do
+	echo "-> running install on worker ${worker}"
 	ssh -i "$user_ssh_key" "${ssh_user}@${worker}" "INSTALL_K3S_EXEC='--node-external-ip=${worker} ' INSTALL_K3S_SKIP_DOWNLOAD='true' K3S_TOKEN='${tok}' K3S_URL='https://${master}:6443' ./install.sh"
 done
 
