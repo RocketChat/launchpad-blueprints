@@ -258,7 +258,7 @@ tok="$(echo 'k3s-super-secret' | sha1sum | cut -f1 -d' ')"
 echo "-> running install on master ${master}"
 
 # k3s master setup
-ssh -i "$user_ssh_key" "${ssh_user}@${master}" "INSTALL_K3S_EXEC='server --advertise-address=${master} --cluster-cidr=10.42.0.0/16 --node-external-ip=${master} --tls-san=${master} ' INSTALL_K3S_SKIP_DOWNLOAD='true' K3S_TOKEN='${tok}' ./install.sh"
+ssh -i "$user_ssh_key" "${ssh_user}@${master}" "INSTALL_K3S_EXEC='server --flannel-backend=host-gw --advertise-address=${master} --cluster-cidr=10.42.0.0/16 --node-external-ip=${master} --tls-san=${master} ' INSTALL_K3S_SKIP_DOWNLOAD='true' K3S_TOKEN='${tok}' ./install.sh"
 
 # k3s workers setup
 for worker in $workers; do
