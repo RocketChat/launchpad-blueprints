@@ -11,8 +11,8 @@ ssh_user="ubuntu"
 user_ssh_key=~/.ssh/kvm_lab_rsa
 #
 
-if [ $# -ne 2 ]; then
-        echo "Usage: $0 cluster image"
+if [ $# -lt 2 ]; then
+        echo "Usage: $0 cluster image1 [... imageN]"
         echo "Example: $0 my-lab offline/images/mongo\:4.4.2.tar"
         exit
 fi
@@ -25,7 +25,7 @@ for d in "virsh ssh"; do
 done
 
 cluster="$1"
-im="$2"
+images=${@:2}
 
 nodes=$(virsh list | grep "${cluster}-node-" | awk '{print $2}')
 
@@ -35,7 +35,13 @@ for node in $nodes; do
 	ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a'
 	[[ $? -ne 0 ]] && exit 1
 
-	scp -r -i "$user_ssh_key" "$im" "${ssh_user}@${node_ip}:/home/${ssh_user}/images/"
+	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
+		"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && mkdir -pv /home/${ssh_user}/images/"
+
+	for im in $images; do
+		scp -r -i "$user_ssh_key" "$im" "${ssh_user}@${node_ip}:/home/${ssh_user}/images/"
+	done
+
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
 		"sudo mv -v /home/${ssh_user}/images/* /var/lib/rancher/k3s/agent/images/"
 done
