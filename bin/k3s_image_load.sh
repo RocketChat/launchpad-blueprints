@@ -38,9 +38,7 @@ for node in $nodes; do
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
 		"sudo mkdir -pv /var/lib/rancher/k3s/agent/images && mkdir -pv /home/${ssh_user}/images/"
 
-	for im in $images; do
-		scp -r -i "$user_ssh_key" "$im" "${ssh_user}@${node_ip}:/home/${ssh_user}/images/"
-	done
+	scp -r -i "$user_ssh_key" $images "${ssh_user}@${node_ip}:/home/${ssh_user}/images/"
 
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
 		"sudo mv -v /home/${ssh_user}/images/* /var/lib/rancher/k3s/agent/images/"
