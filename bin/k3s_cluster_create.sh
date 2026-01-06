@@ -181,9 +181,11 @@ EOF
 			sleep 1
 		done
 
-		ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip" 2> /dev/null
-		ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a && cloud-init status --wait' 2> /dev/null
-		[[ $? -eq 0 ]] || exit 1
+		while :; do
+        	        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip" 2> /dev/null
+                	ssh -o "StrictHostKeyChecking no" -i "$user_ssh_key" "${ssh_user}@${node_ip}" 'uname -a && cloud-init status --wait' 2> /dev/null
+                	([[ $? -ne 0 ]] && sleep 1) || break
+	        done
 	fi
 
 	kd=$(dirname "$k3s_install"); if [ ! -d "$kd" ]; then
