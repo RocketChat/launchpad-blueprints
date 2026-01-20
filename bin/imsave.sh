@@ -23,8 +23,6 @@ for im in $images; do
 		continue
 	fi
 
-	echo P: $im
-
 	docker pull $im -q
 	docker save $im -o "$tar" > /dev/null
 	docker image rm $im > /dev/null
