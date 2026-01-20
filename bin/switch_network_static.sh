@@ -2,7 +2,7 @@
 #
 # switch_network_static.sh switches a Libvirt VM network AND configures persistent Static IP
 # via Cloud-Init (config-drive).
-# It is used by k3s_cluster_create.sh
+# It is used by kcreate.sh
 #
 # Requires: cloud-image-utils, virsh
 #

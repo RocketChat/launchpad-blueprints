@@ -2,7 +2,7 @@
 #
 # create_airgapped_net.sh creates a Libvirt VM network for simulating air-gapped environments.
 # The configuration allows host-to-VMs and VM-to-VM communication.
-# It is used by k3s_cluster_create.sh .
+# It is used by kcreate.sh .
 #
 
 # configuration
