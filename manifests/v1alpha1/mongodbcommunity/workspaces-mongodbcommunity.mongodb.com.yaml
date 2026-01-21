@@ -6,7 +6,7 @@ metadata:
 spec:
   members: 3
   type: ReplicaSet
-  version: "8.0.14"
+  version: "8.0.17"
   prometheus:
     username: prometheus-username
     passwordSecretRef:
@@ -58,10 +58,18 @@ spec:
                   topologyKey: "kubernetes.io/hostname"
       volumeClaimTemplates: # handled by launchpad
         - metadata:
-            name: workspaces-db-volume
+            name: data-volume
           spec:
-            accessModes:
-              - ReadWriteOnce
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: mongodb-sc
             resources:
               requests:
                 storage: 30G
+        - metadata:
+            name: logs-volume
+          spec:
+            accessModes: [ "ReadWriteOnce" ]
+            storageClassName: mongodb-sc
+            resources:
+              requests:
+                storage: 4G
