@@ -6,7 +6,87 @@ metadata:
 spec:
   repo: https://rocketchat.github.io/helm-charts
   chart: monitoring
-  version: 0.0.9
+  version: 0.0.10
   targetNamespace: monitoring
   createNamespace: true
-  #valuesContent: |-
+  valuesContent: |-
+    operator:
+      prometheus:
+        prometheusSpec:
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                storageClassName: monitoring-sc
+
+    grafana:
+      enabled: true
+      deploy:
+        enabled: true
+        storageClassName: monitoring-sc
+
+    loki:
+      limits_config:
+        retention_period: 15d  # Data older than 15 days is marked for deletion
+
+      # Based on 10GB/day ingestion and a 15d retention period
+      # Total Disk=(Daily Raw Volume×Retention Days×0.15)+Safety Buffer (20%)
+      singleBinary:
+        persistence:
+          size: 30Gi # overwrite precedence over global loki.persistence below... since it is declared on monitoring helm chart
+          storageClass: monitoring-sc
+
+      global:
+        cluster:
+          profile: "" # Emptying the profile prevents it from forcing production-sized caches
+
+      deploymentMode: SingleBinary
+
+      storage:
+        type: filesystem
+
+      # Resource Allocation
+      # Note: Memory requests and limits are identical to prevent OOM kills during query spikes
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: 2 # Allows Loki to burst during heavy LogQL queries
+          memory: 2Gi
+
+      # Note: Loki: Keep the cache for performance but don't want it stealing 10Gi of RAM
+      #
+      # Force the Chunks Cache to a small footprint
+      chunksCache:
+        enabled: true
+        allocatedMemory: 512  # This is the "Magic" key. Value in MB.
+        # We must also force the resources here to match
+        resources:
+          requests:
+            cpu: 100m
+            memory: 700Mi
+          limits:
+            cpu: 500m
+            memory: 700Mi
+
+      # Force the Results Cache to a small footprint
+      resultsCache:
+        enabled: true
+        allocatedMemory: 512
+        resources:
+          requests:
+            cpu: 100m
+            memory: 700Mi
+          limits:
+            cpu: 500m
+            memory: 700Mi
+
+      # Prevent the Memcached sub-chart from using its global defaults
+      memcached:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 700Mi
+          limits:
+            cpu: 500m
+            memory: 700Mi
