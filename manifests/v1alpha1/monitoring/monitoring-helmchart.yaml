@@ -6,7 +6,7 @@ metadata:
 spec:
   repo: https://rocketchat.github.io/helm-charts
   chart: monitoring
-  version: 0.0.9
+  version: 0.0.10
   targetNamespace: monitoring
   createNamespace: true
   #valuesContent: |-
