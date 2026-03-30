@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: launchcontrol
+  name: launchcontrol-workspace-viewer-role
+rules:
+- apiGroups:
+  - launchcontrol.cloud.rocket.chat
+  resources:
+  - workspaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - launchcontrol.cloud.rocket.chat
+  resources:
+  - workspaces/status
+  verbs:
+  - get

@@ -3,10 +3,14 @@ kind: HelmChart
 metadata:
   name: cert-manager
   namespace: helm-controller
+  annotations:
+    launchpad-registry-overwrite-cm: "imageRegistry:(registry)"
+
+    launchpad-registry-overwrite-imagePullSecrets-global: "global.imagePullSecrets[].name:launchpad-registry-credentials"
 spec:
   repo: https://charts.jetstack.io
   chart: cert-manager
-  version: v1.18.2
+  version: v1.20.0
   targetNamespace: cert-manager
   createNamespace: true
   valuesContent: |-

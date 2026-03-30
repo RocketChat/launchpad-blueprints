@@ -3,10 +3,32 @@ kind: HelmChart
 metadata:
   name: monitoring
   namespace: helm-controller
+  annotations:
+    launchpad-registry-overwrite-global: "global.imageRegistry:(registry)"
+    
+    launchpad-registry-overwrite-operator: "operator.global.imageRegistry:(registry)"
+    
+    # https://grafana.github.io/grafana-operator/docs/installation/helm/
+    launchpad-registry-overwrite-grafana: "grafana.image.repository:(registry)/grafana/grafana-operator"
+    launchpad-registry-overwrite-grafana-im: "grafana.deploy.image:(registry)/grafana/grafana:11.3.0"
+
+    launchpad-registry-overwrite-loki: "loki.global.image.registry:(registry)"
+    launchpad-registry-overwrite-loki-mem: "loki.memcached.image.repository:library/memcached"
+    launchpad-registry-overwrite-loki-sidecar: "loki.sidecar.image.registry:(registry)"
+    launchpad-registry-overwrite-loki-sidecar-repo: "loki.sidecar.image.repository:kiwigrid/k8s-sidecar"
+    
+    launchpad-registry-overwrite-otel: "opentelemetryCollector.image.registry:(registry)/otel/opentelemetry-collector-contrib"
+    
+    launchpad-registry-overwrite-imagePullSecrets-global: "global.imagePullSecrets[].name:launchpad-registry-credentials"
+    launchpad-registry-overwrite-imagePullSecrets-operator: "operator.global.imagePullSecrets[].name:launchpad-registry-credentials"
+    launchpad-registry-overwrite-imagePullSecrets-grafana: "grafana.imagePullSecrets[].name:launchpad-registry-credentials"
+    launchpad-registry-overwrite-imagePullSecrets-loki: "loki.imagePullSecrets[].name:launchpad-registry-credentials"
+    launchpad-registry-overwrite-imagePullSecrets-loki-gw: "loki.gateway.imagePullSecrets[].name:launchpad-registry-credentials"
+    launchpad-registry-overwrite-imagePullSecrets-loki-mem: "loki.memcached.imagePullSecrets[].name:launchpad-registry-credentials"
 spec:
   repo: https://rocketchat.github.io/helm-charts
   chart: monitoring
-  version: 0.0.10
+  version: 0.0.16
   targetNamespace: monitoring
   createNamespace: true
   valuesContent: |-

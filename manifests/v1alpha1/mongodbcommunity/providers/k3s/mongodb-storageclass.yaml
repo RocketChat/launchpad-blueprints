@@ -7,3 +7,5 @@ volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 parameters:
   fsType: xfs
+  dataLocality: "best-effort" 
+  numberOfReplicas: "2" 
