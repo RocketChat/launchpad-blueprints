@@ -30,7 +30,7 @@ images:
   - longhornio/livenessprobe:v2.17.0-20251030
   - longhornio/support-bundle-kit:v0.0.71
   # MongoDB-Kubernetes
-  - quay.io/mongodb/mongodb-community-server:8.0.17-ubi8
+  - quay.io/mongodb/mongodb-community-server:8.0.20-ubi8
   - quay.io/mongodb/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.10
   - quay.io/mongodb/mongodb-kubernetes-readinessprobe:1.0.23
   - quay.io/mongodb/mongodb-kubernetes:1.6.1

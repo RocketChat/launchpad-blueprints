@@ -6,7 +6,7 @@ metadata:
 spec:
   members: 3
   type: ReplicaSet
-  version: "8.0.17-ubi8"
+  version: "8.0.20"
   prometheus:
     username: prometheus-username
     passwordSecretRef:
