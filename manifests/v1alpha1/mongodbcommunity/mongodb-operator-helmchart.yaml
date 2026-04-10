@@ -3,10 +3,24 @@ kind: HelmChart
 metadata:
   name: mongodb-operator
   namespace: helm-controller
+  annotations:
+    launchpad-registry-overwrite-operator: "registry.operator:(registry)/mongodb"
+    launchpad-registry-overwrite-database: "registry.database:(registry)/mongodb"
+    launchpad-registry-overwrite-initDatabase: "registry.initDatabase:(registry)/mongodb"
+    launchpad-registry-overwrite-initOpsManager: "registry.initOpsManager:(registry)/mongodb"
+    launchpad-registry-overwrite-opsManager: "registry.opsManager:(registry)/mongodb"
+    launchpad-registry-overwrite-initAppDb: "registry.initAppDb:(registry)/mongodb"
+    launchpad-registry-overwrite-agent: "registry.agent:(registry)/mongodb"
+    launchpad-registry-overwrite-versionUpgradeHook: "registry.versionUpgradeHook:(registry)/mongodb"
+    launchpad-registry-overwrite-readinessProbe: "registry.readinessProbe:(registry)/mongodb"
+    launchpad-registry-overwrite-community-repo: "community.mongodb.repo:(registry)/mongodb"
+    launchpad-registry-overwrite-community-agent: "community.registry.agent:(registry)/mongodb"
+
+    launchpad-registry-overwrite-imagePullSecrets-registry: "registry.imagePullSecrets:launchpad-registry-credentials"
 spec:
   repo: https://mongodb.github.io/helm-charts/
   chart: mongodb-kubernetes
-  version: v1.6.1
+  version: 1.6.1
   targetNamespace: mongodb
   createNamespace: true
   #valuesContent: |-

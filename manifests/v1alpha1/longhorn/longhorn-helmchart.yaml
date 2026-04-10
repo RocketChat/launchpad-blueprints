@@ -1,0 +1,26 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: longhorn
+  namespace: helm-controller
+  annotations:
+    launchpad-registry-overwrite-manager: "image.longhorn.manager.repository:(registry)/longhornio/longhorn-manager"
+    launchpad-registry-overwrite-engine: "image.longhorn.engine.repository:(registry)/longhornio/longhorn-engine"
+    launchpad-registry-overwrite-ui: "image.longhorn.ui.repository:(registry)/longhornio/longhorn-ui"
+    launchpad-registry-overwrite-instancemanager: "image.longhorn.instanceManager.repository:(registry)/longhornio/longhorn-instance-manager"
+    launchpad-registry-overwrite-sharemanager: "image.longhorn.shareManager.repository:(registry)/longhornio/longhorn-share-manager"
+    launchpad-registry-overwrite-csi-attacher: "image.csi.attacher.repository:(registry)/longhornio/csi-attacher"
+    launchpad-registry-overwrite-csi-provisioner: "image.csi.provisioner.repository:(registry)/longhornio/csi-provisioner"
+    launchpad-registry-overwrite-csi-nodedriver: "image.csi.nodeDriverRegistrar.repository:(registry)/longhornio/csi-node-driver-registrar"
+    launchpad-registry-overwrite-csi-resizer: "image.csi.resizer.repository:(registry)/longhornio/csi-resizer"
+    launchpad-registry-overwrite-csi-snapshotter: "image.csi.snapshotter.repository:(registry)/longhornio/csi-snapshotter"
+    launchpad-registry-overwrite-csi-livenessprobe: "image.csi.livenessProbe.repository:(registry)/longhornio/livenessprobe"
+    launchpad-registry-overwrite-support-bundle-kit: "image.longhorn.supportBundleKit.repository:(registry)/longhornio/support-bundle-kit"
+
+    launchpad-registry-overwrite-imagePullSecrets-global: "global.imagePullSecrets[].name:launchpad-registry-credentials"
+spec:
+  repo: https://charts.longhorn.io
+  chart: longhorn
+  version: 1.10.1
+  targetNamespace: longhorn-system
+  createNamespace: true

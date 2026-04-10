@@ -17,8 +17,11 @@ wrk=~/kvm-lab
 # if not empty, we switch cluster to air_gapped_network after setting up node host
 # but before installing K3s. Cluster should behave as offline after install.
 # air_gapped_network will be created with create_airgapped_net.sh (check config).
-air_gapped_network="" # "airgapped-net"
+air_gapped_network="airgapped-net"
 air_gapped_subnet_ip="192.168.100.1"
+#
+# private registry configuration. more at  https://docs.k3s.io/installation/private-registry
+registries="${wrk}/registries.yaml"
 #
 # k3s assets (scp, speed up); if not present, we fetch it once
 k3s_install="${wrk}/k3s-releases/install.sh"
@@ -240,6 +243,14 @@ EOF
 		sudo touch /var/lib/rancher/k3s/server/manifests/traefik.yaml.skip && \
 		sudo touch /var/lib/rancher/k3s/server/manifests/local-storage.yaml.skip"
 
+	# set up cluster private registries
+	if [ -f "$registries" ]; then
+		ry="$(basename $registries)"
+		scp -i "$user_ssh_key" "$registries" "${ssh_user}@${node_ip}:/home/${ssh_user}/${ry}"
+		ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" \
+                        "sudo mkdir -pv /etc/rancher/k3s/ && sudo mv -v /home/${ssh_user}/${ry} /etc/rancher/k3s/"
+	fi
+
 	node_ips+=$node_ip
 	if [ "$n" -ne "$size" ]; then
 		node_ips+=" "
@@ -258,7 +269,7 @@ tok="$(echo 'k3s-super-secret' | sha1sum | cut -f1 -d' ')"
 echo "-> running install on master ${master}"
 
 # k3s master setup
-ssh -i "$user_ssh_key" "${ssh_user}@${master}" "INSTALL_K3S_EXEC='server --flannel-backend=host-gw --advertise-address=${master} --cluster-cidr=10.42.0.0/16 --node-external-ip=${master} --tls-san=${master} ' INSTALL_K3S_SKIP_DOWNLOAD='true' K3S_TOKEN='${tok}' ./install.sh"
+ssh -i "$user_ssh_key" "${ssh_user}@${master}" "INSTALL_K3S_EXEC='server --embedded-registry --flannel-backend=host-gw --advertise-address=${master} --cluster-cidr=10.42.0.0/16 --node-external-ip=${master} --tls-san=${master} ' INSTALL_K3S_SKIP_DOWNLOAD='true' K3S_TOKEN='${tok}' ./install.sh"
 
 # k3s workers setup
 for worker in $workers; do

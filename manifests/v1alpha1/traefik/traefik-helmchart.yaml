@@ -3,10 +3,15 @@ kind: HelmChart
 metadata:
   name: traefik
   namespace: helm-controller
+  annotations:
+    launchpad-registry-overwrite-traefik: "image.registry:(registry)"
+    launchpad-registry-overwrite-traefik-repo: "image.repository:library/traefik"
+
+    launchpad-registry-overwrite-imagePullSecrets-deployment: "deployment.imagePullSecrets[].name:launchpad-registry-credentials"
 spec:
   repo: https://helm.traefik.io/traefik
   chart: traefik
-  version: v37.0.0
+  version: 37.0.0
   targetNamespace: traefik
   createNamespace: true
   valuesContent: |-
