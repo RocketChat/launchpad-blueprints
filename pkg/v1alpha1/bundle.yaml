@@ -1,6 +1,6 @@
 kind: package
-name: launchpad-aio
-version: v1alpha1
+name: launchpad-blueprints
+version: v1.3.0-alpha1
 
 images:
   # Airlock
@@ -54,13 +54,13 @@ images:
   - otel/opentelemetry-collector-contrib:0.143.0
   - prom/memcached-exporter:v0.15.4
   # Server-Workspace
-  - rocketchat/account-service:8.2.0
-  - rocketchat/authorization-service:8.2.0
-  - rocketchat/ddp-streamer-service:8.2.0
-  - rocketchat/omnichannel-transcript-service:8.2.0
-  - rocketchat/presence-service:8.2.0
-  - rocketchat/queue-worker-service:8.2.0
-  - rocketchat/rocket.chat:8.2.0
+  - rocketchat/account-service:7.10.9
+  - rocketchat/authorization-service:7.10.9
+  - rocketchat/ddp-streamer-service:7.10.9
+  - rocketchat/omnichannel-transcript-service:7.10.9
+  - rocketchat/presence-service:7.10.9
+  - rocketchat/queue-worker-service:7.10.9
+  - rocketchat/rocket.chat:7.10.9
   - nats:2.4.0-alpine
   - natsio/prometheus-nats-exporter:0.9.3
   - natsio/nats-server-config-reloader:0.14.1
