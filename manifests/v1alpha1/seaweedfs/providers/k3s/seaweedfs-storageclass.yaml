@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: seaweedfs-sc
+provisioner: driver.longhorn.io
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  fsType: xfs
+  dataLocality: "best-effort" 
+  numberOfReplicas: "2"
+

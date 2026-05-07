@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rocketchat-uploads-pvc
+  namespace: rocketchat-workspace # managed by launchpad
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: seaweedfs-uploads-sc
+  resources:
+    requests:
+      storage: 10Gi # virtual; managed by launchpad; must be <= filer volume size
+

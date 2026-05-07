@@ -1,0 +1,25 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: seaweedfs-csi-driver
+  namespace: helm-controller
+  annotations:
+    launchpad-registry-overwrite-provisioner: "csiProvisioner.image:(registry)/sig-storage/csi-provisioner:v3.5.0"
+    launchpad-registry-overwrite-resizer: "csiResizer.image:(registry)/sig-storage/csi-resizer:v1.8.0"
+    launchpad-registry-overwrite-attacher: "csiAttacher.image:(registry)/sig-storage/csi-attacher:v4.3.0"
+    launchpad-registry-overwrite-registrar: "csiNodeDriverRegistrar.image:(registry)/sig-storage/csi-node-driver-registrar:v2.8.0"
+    launchpad-registry-overwrite-liveness: "csiLivenessProbe.image:(registry)/sig-storage/livenessprobe:v2.10.0"
+    
+    launchpad-registry-overwrite-plugin: "seaweedfsCsiPlugin.image:(registry)/chrislusf/seaweedfs-csi-driver"
+    launchpad-registry-overwrite-mount: "mountService.image:(registry)/chrislusf/seaweedfs-mount"
+
+    launchpad-registry-overwrite-imagePullSecrets-all: "imagePullSecrets[].name:launchpad-registry-credentials"
+spec:
+  repo: https://seaweedfs.github.io/seaweedfs-csi-driver/helm
+  chart: seaweedfs-csi-driver
+  version: 0.2.17
+  targetNamespace: seaweedfs
+  createNamespace: true
+  # The value below match the SeaweedFS Operator deployment
+  valuesContent: |-
+    seaweedfsFiler: "workspaces-filer.seaweedfs.svc.cluster.local:8888"

@@ -4,7 +4,7 @@ metadata:
   name: workspaces
   namespace: mongodb
 spec:
-  members: 3
+  members: 3 # handled by launchpad
   type: ReplicaSet
   version: "8.0.20"
   prometheus:

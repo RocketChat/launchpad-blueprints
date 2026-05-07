@@ -1,0 +1,15 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: seaweedfs-uploads-sc
+provisioner: seaweedfs-csi-driver
+parameters:
+  filer: workspaces-filer.seaweedfs.svc.cluster.local:8888
+  uid: "1000"
+  gid: "1000"
+mountOptions:
+  - allow_other
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+

@@ -1373,6 +1373,17 @@ spec:
                 description: If suspend is true, the operator will scale all the deployments
                   to 0.
                 type: boolean
+              uploads:
+                description: |-
+                  Uploads configures a user-supplied PVC to be mounted at /app/uploads in the RocketChat container.
+                  The controller only mounts the PVC; it does not create or delete it.
+                properties:
+                  pvcName:
+                    description: |-
+                      PVCName, if set and non-empty, enables a volume mount for RocketChat uploads.
+                      The controller mounts the specified PVC at /app/uploads but does not manage its lifecycle.
+                    type: string
+                type: object
             required:
             - baseDomain
             type: object

@@ -1,0 +1,36 @@
+apiVersion: seaweed.seaweedfs.com/v1
+kind: Seaweed
+metadata:
+  name: workspaces
+  namespace: seaweedfs
+spec:
+  image: chrislusf/seaweedfs:4.22
+  volumeServerDiskCount: 1
+  master:
+    replicas: 1 # managed by launchpad
+    volumeSizeLimitMB: 512
+    metricsPort: 9324
+  volume:
+    replicas: 1 # stick to 1 as replication managed by distributed storage
+    storageClassName: seaweedfs-sc
+    maxVolumeCounts: 25 # managed by launchpad; (storage * 0.9 / volumeSizeLimitMB) + 7 (reclaim 7 slots from default collection)
+    requests:
+      storage: 10Gi # managed by launchpad
+    metricsPort: 9325
+  filer:
+    replicas: 1 # stick to 1 as using LevelDB; (2+ only with Shared DB (Postgres/Redis...))
+    persistence:
+      enabled: true
+      storageClassName: seaweedfs-sc
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi # managed by launchpad
+    config: |-
+      [leveldb2]
+      enabled = true
+      dir = "/data/filerldb2"
+    metricsPort: 9326
+  #s3: even not using it, we can't do anything atm to not deploy the gateway.
+

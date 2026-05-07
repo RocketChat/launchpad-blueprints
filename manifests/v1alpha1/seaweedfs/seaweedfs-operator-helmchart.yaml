@@ -1,0 +1,26 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: seaweedfs-operator
+  namespace: helm-controller
+  annotations:
+    launchpad-registry-overwrite-wh: "webhook.certgen.registry:(registry)"
+    launchpad-registry-overwrite-wh-ic: "webhook.initContainer.image:(registry)/curlimages/curl:8.8.0"
+
+    launchpad-registry-overwrite-im: "image.registry:(registry)/chrislusf"
+    launchpad-registry-overwrite-policy: "image.pullPolicy:IfNotPresent"
+    launchpad-registry-overwrite-imagePullSecrets-im: "image.pullSecrets:launchpad-registry-credentials"
+spec:
+  repo: https://seaweedfs.github.io/seaweedfs-operator
+  chart: seaweedfs-operator
+  version: 0.1.16
+  targetNamespace: seaweedfs
+  createNamespace: true
+  valuesContent: |-
+    webhook:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+    grafanaDashboard:
+      enabled: true
+
