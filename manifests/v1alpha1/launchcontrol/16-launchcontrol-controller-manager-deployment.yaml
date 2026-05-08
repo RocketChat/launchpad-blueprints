@@ -35,7 +35,7 @@ spec:
           value: "true"
         - name: CONCURRENT_RECONCILES
           value: "7"
-        image: rocketchat/launchcontrol:f6dc32ccedc1cf6e598c11dd40b3b63707182d18
+        image: rocketchat/launchcontrol:8504483712689aff81689e8e64ed5758693a1646
         livenessProbe:
           httpGet:
             path: /healthz

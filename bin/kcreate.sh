@@ -50,9 +50,9 @@ ssh_user="ubuntu"
 user_ssh_key=~/.ssh/kvm_lab_rsa
 #
 # nodes configuration
-node_memory=4096
-node_vcpus=2
-node_disk_size="70G"
+node_memory=8192
+node_vcpus=3
+node_disk_size="100G"
 node_network="default"
 node_network_subnet_ip="192.168.122.1"
 #
@@ -167,7 +167,7 @@ EOF
 	ssh -i "$user_ssh_key" "${ssh_user}@${node_ip}" "sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf; \
 		until curl google.com &> /dev/null; do sleep 2; done; \
 		sudo apt-get update && \
-		DEBIAN_FRONTEND=noninteractive sudo apt-get install -y qemu-guest-agent open-iscsi dmsetup nfs-common cryptsetup && \
+		sudo apt-get install -y qemu-guest-agent open-iscsi dmsetup nfs-common cryptsetup && \
 		sudo systemctl enable --now qemu-guest-agent"
 
 	if [ -n "$air_gapped_network" ]; then

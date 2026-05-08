@@ -1,6 +1,6 @@
 kind: package
 name: launchcontrol
-version: f6dc32ccedc1cf6e598c11dd40b3b63707182d18
+version: 8504483712689aff81689e8e64ed5758693a1646
 
 images:
-  - rocketchat/launchcontrol:f6dc32ccedc1cf6e598c11dd40b3b63707182d18
+  - rocketchat/launchcontrol:8504483712689aff81689e8e64ed5758693a1646

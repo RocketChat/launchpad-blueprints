@@ -1,6 +1,6 @@
 kind: package
 name: launchpad-blueprints
-version: v1.3.0-alpha1
+version: v1.4.0-alpha1
 
 images:
   # Airlock
@@ -13,7 +13,7 @@ images:
   - quay.io/jetstack/cert-manager-webhook:v1.20.0
   - quay.io/jetstack/cert-manager-startupapicheck:v1.20.0
   # Launchcontrol
-  - rocketchat/launchcontrol:f6dc32ccedc1cf6e598c11dd40b3b63707182d18
+  - rocketchat/launchcontrol:8504483712689aff81689e8e64ed5758693a1646
   # Longhorn
   - longhornio/backing-image-manager:v1.10.1
   - longhornio/longhorn-engine:v1.10.1
@@ -66,6 +66,19 @@ images:
   - natsio/nats-server-config-reloader:0.14.1
   # Traefik
   - docker.io/traefik:v3.5.0
+  # SeaweedFS
+  - chrislusf/seaweedfs-operator:1.0.13
+  - chrislusf/seaweedfs:4.22
+  - registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20231011-8b53cabe0
+  - curlimages/curl:8.8.0
+  # SeaweedFS CSI Driver
+  - registry.k8s.io/sig-storage/csi-provisioner:v3.5.0
+  - registry.k8s.io/sig-storage/csi-resizer:v1.8.0
+  - registry.k8s.io/sig-storage/csi-attacher:v4.3.0
+  - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
+  - registry.k8s.io/sig-storage/livenessprobe:v2.10.0
+  - chrislusf/seaweedfs-csi-driver:v1.4.11
+  - chrislusf/seaweedfs-mount:v1.4.11
 
 charts:
   - name: cert-manager
@@ -83,3 +96,9 @@ charts:
   - name: traefik
     version: 37.0.0
     url: https://helm.traefik.io/traefik
+  - name: seaweedfs-operator
+    version: 0.1.16
+    url: https://seaweedfs.github.io/seaweedfs-operator
+  - name: seaweedfs-csi-driver
+    version: 0.2.17
+    url: https://seaweedfs.github.io/seaweedfs-csi-driver/helm
