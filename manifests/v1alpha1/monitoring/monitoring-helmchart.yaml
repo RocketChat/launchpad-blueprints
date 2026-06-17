@@ -28,7 +28,7 @@ metadata:
 spec:
   repo: https://rocketchat.github.io/helm-charts
   chart: monitoring
-  version: 0.0.16
+  version: 0.0.17
   targetNamespace: monitoring
   createNamespace: true
   valuesContent: |-
@@ -45,6 +45,8 @@ spec:
       deploy:
         enabled: true
         storageClassName: monitoring-sc
+      dashboards:
+        airgapped: true
 
     loki:
       limits_config:
