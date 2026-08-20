@@ -1,6 +1,7 @@
-kind: package
+apiVersion: launchpad.cloud.rocket.chat/v1alpha1
+kind: BlueprintPackage
 name: launchpad-blueprints
-version: v1.4.1-alpha1
+manifestsVersion: v1.4.2-alpha1
 
 images:
   # Airlock

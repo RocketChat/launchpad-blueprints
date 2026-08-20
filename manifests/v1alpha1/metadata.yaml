@@ -1,0 +1,7 @@
+apiVersion: launchpad.cloud.rocket.chat/v1alpha1
+kind: BlueprintManifests
+version: v1.4.2-alpha1
+#baseVersion: v1.4.2-alpha1
+allowPresetOverrides: true
+description: "Rocket.Chat Launchpad standard blueprint manifests"
+author: "Rocket.Chat Cloud Team"

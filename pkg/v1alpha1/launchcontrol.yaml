@@ -1,5 +1,8 @@
-kind: package
+apiVersion: launchpad.cloud.rocket.chat/v1alpha1
+kind: BlueprintPackage
 name: launchcontrol
+# manifestsVersion: v1.4.2-alpha1
+manifestsSource: "../../manifests/v1alpha1"
 version: 8504483712689aff81689e8e64ed5758693a1646
 
 images:
