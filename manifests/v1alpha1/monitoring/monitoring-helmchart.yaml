@@ -31,6 +31,8 @@ spec:
   version: 0.0.17
   targetNamespace: monitoring
   createNamespace: true
+  securityContext:
+    runAsUser: 1000
   valuesContent: |-
     operator:
       prometheus:
