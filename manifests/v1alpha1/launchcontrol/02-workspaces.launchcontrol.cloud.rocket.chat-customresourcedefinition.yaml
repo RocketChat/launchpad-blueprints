@@ -550,6 +550,20 @@ spec:
                 default: latest
                 description: ImageTag is the version tag for the microservices
                 type: string
+              ingress:
+                description: Ingress configures the ingress for the operand.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations is an optional map of additional annotations
+                      to add to the ingress.
+                    type: object
+                  ingressClassName:
+                    description: IngressClassName is the name of the IngressClass
+                      cluster resource.
+                    type: string
+                type: object
               metricsEnabled:
                 default: false
                 description: MetricsEnabled configures metrics collection for the
