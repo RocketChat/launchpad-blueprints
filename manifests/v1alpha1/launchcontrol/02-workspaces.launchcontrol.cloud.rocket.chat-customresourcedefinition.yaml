@@ -559,6 +559,14 @@ spec:
                     description: Annotations is an optional map of additional annotations
                       to add to the ingress.
                     type: object
+                  disableTLSSecret:
+                    default: false
+                    description: |-
+                      DisableTLSSecret stops launchcontrol from injecting spec.tls and cert-manager
+                      annotations onto the Ingress. This allows platforms with cluster-wide wildcard
+                      certificates (like OpenShift Router) or upstream load balancers to terminate TLS
+                      at the edge while keeping WorkspaceSpec.HTTPS = true for Rocket.Chat's ROOT_URL.
+                    type: boolean
                   ingressClassName:
                     description: IngressClassName is the name of the IngressClass
                       cluster resource.
