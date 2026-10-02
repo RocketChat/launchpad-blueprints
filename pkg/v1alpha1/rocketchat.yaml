@@ -2,7 +2,7 @@ apiVersion: launchpad.cloud.rocket.chat/v1alpha1
 kind: BlueprintPackage
 name: rocketchat-upgrade
 version: 8.1.8
-manifestsVersion: v1.4.3-alpha1
+manifestsVersion: v1.4.4-alpha1
 
 images:
   # Core Monolith Workload
