@@ -1,0 +1,9 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: cert-manager
+  namespace: helm-controller
+spec:
+  valuesContent: |-
+    webhook:
+      hostNetwork: false
