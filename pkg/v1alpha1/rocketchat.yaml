@@ -2,18 +2,18 @@ apiVersion: launchpad.cloud.rocket.chat/v1alpha1
 kind: BlueprintPackage
 name: rocketchat-upgrade
 version: 8.1.8
-manifestsVersion: v1.4.3-alpha1
+manifestsVersion: v1.4.4-alpha1
 
 images:
   # Core Monolith Workload
-  - rocketchat/rocket.chat:8.1.8
+  - rocketchat/rocket.chat:8.8.1
 
   # Microservice Workloads
-  - rocketchat/account-service:8.1.8
-  - rocketchat/authorization-service:8.1.8
-  - rocketchat/ddp-streamer-service:8.1.8
-  - rocketchat/presence-service:8.1.8
+  - rocketchat/account-service:8.8.1
+  - rocketchat/authorization-service:8.8.1
+  - rocketchat/ddp-streamer-service:8.8.1
+  - rocketchat/presence-service:8.8.1
 
   # Alpha Features (Optional / if enabled)
-  - rocketchat/omnichannel-transcript-service:8.1.8
-  - rocketchat/queue-worker-service:8.1.8
+  - rocketchat/omnichannel-transcript-service:8.8.1
+  - rocketchat/queue-worker-service:8.8.1

@@ -23,4 +23,6 @@ spec:
   version: 1.6.1
   targetNamespace: mongodb
   createNamespace: true
+  securityContext:
+    runAsUser: 1000
   #valuesContent: |-

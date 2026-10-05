@@ -16,6 +16,8 @@ spec:
   version: 0.1.16
   targetNamespace: seaweedfs
   createNamespace: true
+  securityContext:
+    runAsUser: 1000
   valuesContent: |-
     webhook:
       enabled: true

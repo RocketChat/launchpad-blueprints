@@ -1,9 +1,12 @@
 apiVersion: launchpad.cloud.rocket.chat/v1alpha1
 kind: BlueprintPackage
 name: launchpad-blueprints
-manifestsVersion: v1.4.2-alpha1
+manifestsSource: ../../manifests/v1alpha1/
 
 images:
+  # Helm-Controller (OpenShift / EKS / non-k3s clusters)
+  - rancher/helm-controller:v0.16.13
+  - rancher/klipper-helm:v0.13.3-build20260909
   # Airlock
   - rocketchat/airlock:6af3b449b5028bc3079695c06c95a9411d5b456d
   - quay.io/brancz/kube-rbac-proxy:v0.13.0
@@ -14,7 +17,7 @@ images:
   - quay.io/jetstack/cert-manager-webhook:v1.20.0
   - quay.io/jetstack/cert-manager-startupapicheck:v1.20.0
   # Launchcontrol
-  - rocketchat/launchcontrol:8504483712689aff81689e8e64ed5758693a1646
+  - rocketchat/launchcontrol:25177eb92d30df0f2661614f30652eaf76f08077
   # Longhorn
   - longhornio/backing-image-manager:v1.10.1
   - longhornio/longhorn-engine:v1.10.1
@@ -55,13 +58,13 @@ images:
   - otel/opentelemetry-collector-contrib:0.143.0
   - prom/memcached-exporter:v0.15.4
   # Server-Workspace
-  - rocketchat/account-service:8.5.1
-  - rocketchat/authorization-service:8.5.1
-  - rocketchat/ddp-streamer-service:8.5.1
-  - rocketchat/omnichannel-transcript-service:8.5.1
-  - rocketchat/presence-service:8.5.1
-  - rocketchat/queue-worker-service:8.5.1
-  - rocketchat/rocket.chat:8.5.1
+  - rocketchat/account-service:8.8.1
+  - rocketchat/authorization-service:8.8.1
+  - rocketchat/ddp-streamer-service:8.8.1
+  - rocketchat/omnichannel-transcript-service:8.8.1
+  - rocketchat/presence-service:8.8.1
+  - rocketchat/queue-worker-service:8.8.1
+  - rocketchat/rocket.chat:8.8.1
   - nats:2.4.0-alpine
   - natsio/prometheus-nats-exporter:0.9.3
   - natsio/nats-server-config-reloader:0.14.1
