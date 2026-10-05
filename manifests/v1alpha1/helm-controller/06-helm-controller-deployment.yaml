@@ -30,4 +30,4 @@ spec:
             fieldRef:
               fieldPath: spec.serviceAccountName
         - name: DEFAULT_JOB_IMAGE
-          value: rancher/klipper-helm:v0.9.8-build20250709
+          value: rancher/klipper-helm:v0.13.3-build20260909
