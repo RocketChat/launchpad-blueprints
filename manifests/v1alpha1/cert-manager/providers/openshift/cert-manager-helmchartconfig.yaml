@@ -7,3 +7,6 @@ spec:
   valuesContent: |-
     webhook:
       hostNetwork: false
+    config:
+      featureGates:
+        ACMEHTTP01IngressPathTypeExact: false

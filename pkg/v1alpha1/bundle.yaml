@@ -11,11 +11,11 @@ images:
   - rocketchat/airlock:6af3b449b5028bc3079695c06c95a9411d5b456d
   - quay.io/brancz/kube-rbac-proxy:v0.13.0
   # Cert-Manager
-  - quay.io/jetstack/cert-manager-cainjector:v1.20.0
-  - quay.io/jetstack/cert-manager-controller:v1.20.0
-  - quay.io/jetstack/cert-manager-acmesolver:v1.20.0
-  - quay.io/jetstack/cert-manager-webhook:v1.20.0
-  - quay.io/jetstack/cert-manager-startupapicheck:v1.20.0
+  - quay.io/jetstack/cert-manager-cainjector:v1.20.4
+  - quay.io/jetstack/cert-manager-controller:v1.20.4
+  - quay.io/jetstack/cert-manager-acmesolver:v1.20.4
+  - quay.io/jetstack/cert-manager-webhook:v1.20.4
+  - quay.io/jetstack/cert-manager-startupapicheck:v1.20.4
   # Launchcontrol
   - rocketchat/launchcontrol:25177eb92d30df0f2661614f30652eaf76f08077
   # Longhorn
@@ -86,7 +86,7 @@ images:
 
 charts:
   - name: cert-manager
-    version: v1.20.0
+    version: v1.20.4
     url: https://charts.jetstack.io
   - name: longhorn
     version: 1.10.1
