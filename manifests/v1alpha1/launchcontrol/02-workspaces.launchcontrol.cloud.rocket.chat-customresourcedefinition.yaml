@@ -325,6 +325,24 @@ spec:
                 description: BaseDomain is the host domain used when composing operand
                   subdomain
                 type: string
+              caCerts:
+                description: CACerts configures additional trusted CA certificates
+                  for outbound TLS connections.
+                properties:
+                  key:
+                    default: ca.crt
+                    description: |-
+                      Key specifies the key within the Secret that contains the PEM-formatted CA certificate bundle.
+                      Defaults to "ca.crt" if not specified.
+                    type: string
+                  secretName:
+                    description: |-
+                      SecretName is the name of the Kubernetes Secret containing the CA certificate bundle.
+                      The secret must reside in the workspace namespace (<workspace>-workspace).
+                    type: string
+                required:
+                - secretName
+                type: object
               customDomain:
                 description: |-
                   CustomDomain configures ingresses for a custom domain. It also configures
