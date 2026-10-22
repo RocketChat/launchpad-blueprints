@@ -17,7 +17,7 @@ images:
   - quay.io/jetstack/cert-manager-webhook:v1.20.4
   - quay.io/jetstack/cert-manager-startupapicheck:v1.20.4
   # Launchcontrol
-  - rocketchat/launchcontrol:25177eb92d30df0f2661614f30652eaf76f08077
+  - rocketchat/launchcontrol:939b00160c8d211605ff983a30e9945797ef63f6
   # Longhorn
   - longhornio/backing-image-manager:v1.10.1
   - longhornio/longhorn-engine:v1.10.1
