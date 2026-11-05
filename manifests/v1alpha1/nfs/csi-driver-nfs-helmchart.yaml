@@ -1,0 +1,24 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: csi-driver-nfs
+  namespace: helm-controller
+  annotations:
+    launchpad-registry-overwrite-base: "image.baseRepo:(registry)"
+    launchpad-registry-overwrite-nfs: "image.nfs.repository:(registry)/sig-storage/nfsplugin"
+
+    launchpad-registry-overwrite-imagePullSecrets-all: "imagePullSecrets[].name:launchpad-registry-credentials"
+spec:
+  repo: https://kubernetes-csi.github.io/csi-driver-nfs
+  chart: csi-driver-nfs
+  version: 4.13.6
+  targetNamespace: nfs
+  createNamespace: true
+  securityContext:
+    runAsUser: 1000
+  valuesContent: |-
+    controller:
+      enableSnapshotter: false
+    externalSnapshotter:
+      enabled: false
+

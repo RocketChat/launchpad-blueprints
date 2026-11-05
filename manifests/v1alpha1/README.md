@@ -17,6 +17,7 @@ manifests/v1alpha1/
 ├── mongodbcommunity/         # MongoDB Community operator & CRDs
 ├── mongosh/                  # MongoDB shell utility pods
 ├── monitoring/               # Monitoring HelmChart & PodMonitors
+├── nfs/                      # Optional CSI driver for pre-existing external NFS shares
 ├── seaweedfs/                # SeaweedFS operator & CSI driver
 └── traefik/                  # Traefik ingress controller HelmChart
 ```

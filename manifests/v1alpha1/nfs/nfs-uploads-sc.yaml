@@ -1,0 +1,13 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-uploads-sc
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: "" # managed by launchpad
+  share: "/" # managed by launchpad
+  mountPermissions: "0777"
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+
