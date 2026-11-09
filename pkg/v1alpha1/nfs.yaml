@@ -1,0 +1,19 @@
+apiVersion: launchpad.cloud.rocket.chat/v1alpha1
+kind: BlueprintPackage
+name: csi-driver-nfs
+version: 4.13.6
+manifestsSource: ../../manifests/v1alpha1/
+
+images:
+  # NFS CSI Driver
+  - registry.k8s.io/sig-storage/nfsplugin:v4.13.6
+  - registry.k8s.io/sig-storage/csi-provisioner:v6.3.0
+  - registry.k8s.io/sig-storage/csi-resizer:v2.2.1
+  - registry.k8s.io/sig-storage/livenessprobe:v2.19.0
+  - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.17.0
+
+charts:
+  - name: csi-driver-nfs
+    version: 4.13.6
+    url: https://kubernetes-csi.github.io/csi-driver-nfs
+
